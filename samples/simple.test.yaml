@@ -1,0 +1,23 @@
+name: Simple Sample
+description: This is a simple sample
+suites:
+  - name: Test HTTP verbs
+    cases:
+      - title: A GET request
+        request:
+          method: GET
+          url: http://httpbin.org/get
+          headers:
+            - key: content-type
+              value: application/json
+          assertions:
+            status: 200
+            headers:
+              - path: content-type
+                operator: eq
+                expected: application/json
+            body:
+              - path: url
+                operator: eq
+                expected: http://httpbin.org/get
+          

@@ -1,0 +1,6 @@
+.DS_Store
+.goose
+.vscode
+CLAUDE.md
+bin
+logs
