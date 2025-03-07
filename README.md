@@ -74,7 +74,7 @@ httpprobe run -p sample.test.yaml
 
 ## Docs
 
-See docs here
+See docs [here](https://mrfoh.github.io/httpprobe/)
 
 ## Contributing
 
