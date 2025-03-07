@@ -166,26 +166,74 @@ httpprobe run --verbose
 
 ## Environment Variables
 
-HttpProbe can load environment variables from a file specified with `--envfile`. These variables can be accessed in your test definitions using the `${ENV:VARIABLE_NAME}` syntax.
+HttpProbe can load environment variables from a file specified with `--envfile`. These variables can be accessed in your test definitions using the `${env:VARIABLE_NAME}` syntax.
 
-For example, if your `.env` file contains:
+### Configuration
+
+By default, HttpProbe looks for a file named `.env` in the current directory. You can specify a different file using the `--envfile` flag:
+
+```bash
+httpprobe run --envfile .env.production
+```
+
+### Environment File Format
+
+The environment file should use the standard format of one variable per line, with `KEY=VALUE` pairs:
 
 ```
+# Comments are supported
 API_KEY=secret-key
 BASE_URL=https://api.example.com
+TIMEOUT=30
 ```
 
-You can reference these in your test definitions:
+Both single and double quotes are supported and will be stripped from the values:
+
+```
+SECRET_KEY='this is a quoted string'
+API_TOKEN="another quoted string"
+```
+
+### Using Environment Variables in Tests
+
+Once loaded, environment variables can be accessed in your test definitions using the `${env:VARIABLE_NAME}` syntax:
 
 ```yaml
-- name: Get user profile
-  request:
-    url: ${ENV:BASE_URL}/profile
-    headers:
-      Authorization: Bearer ${ENV:API_KEY}
+name: API Tests with Environment Variables
+suites:
+  - name: Authentication Tests
+    cases:
+      - title: Test API key authentication
+        request:
+          url: ${env:BASE_URL}/auth
+          headers:
+            - key: Authorization
+              value: Bearer ${env:API_KEY}
+          body:
+            type: json
+            Data:
+              environment: ${env:ENV_NAME}
 ```
 
-This allows you to keep sensitive information out of your test files and change configurations based on environment.
+### Environment Switching
+
+This feature is particularly useful for switching between different environments (development, staging, production) without modifying your test files:
+
+```bash
+# Run tests against development environment
+httpprobe run --envfile .env.development
+
+# Run tests against production environment
+httpprobe run --envfile .env.production
+```
+
+### Best Practices
+
+1. **Sensitive Information**: Use environment variables for API keys, tokens, and other sensitive data
+2. **Environment-specific URLs**: Store base URLs and endpoints in environment variables
+3. **Credentials**: Keep usernames, passwords, and other credentials in environment variables
+4. **Multiple Environments**: Create separate .env files for different environments (.env.dev, .env.staging, .env.prod)
+5. **CI/CD Integration**: In CI/CD pipelines, use the appropriate environment file for each environment
 
 ## Exit Codes
 

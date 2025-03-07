@@ -5,3 +5,5 @@ CLAUDE.md
 claude
 bin
 logs
+test-results.json
+.env

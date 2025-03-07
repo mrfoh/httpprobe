@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"regexp"
@@ -13,6 +14,64 @@ import (
 // init initializes the random number generator
 func init() {
 	rand.Seed(time.Now().UnixNano())
+}
+
+// LoadEnvFile loads environment variables from a file
+// Environment variables in the file should be in the format KEY=VALUE
+func LoadEnvFile(filePath string) error {
+	if filePath == "" {
+		return nil
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		// If file doesn't exist, just return nil (not an error)
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("error opening env file: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
+
+	for scanner.Scan() {
+		lineNum++
+		line := scanner.Text()
+
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// Split on first equals sign
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid format in env file at line %d: %s", lineNum, line)
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		// Remove quotes if present
+		if len(value) > 1 && (strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) ||
+			(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+			value = value[1 : len(value)-1]
+		}
+
+		// Set environment variable
+		err := os.Setenv(key, value)
+		if err != nil {
+			return fmt.Errorf("error setting environment variable %s: %w", key, err)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading env file: %w", err)
+	}
+
+	return nil
 }
 
 // InterpolateVariables replaces variable references in the input string
