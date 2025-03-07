@@ -1,0 +1,72 @@
+package examples
+
+import (
+	"fmt"
+
+	"github.com/mrfoh/httpprobe/internal/reqassert"
+)
+
+// ResponseTimeAssertion validates that the response was received within a time limit
+type ResponseTimeAssertion struct {
+	MaxMilliseconds int
+}
+
+// Validate checks if the response time is under the maximum allowed
+func (a *ResponseTimeAssertion) Validate(ctx *reqassert.AssertionContext) error {
+	// Note: The context would need to be extended to include response time
+	if ctx.ResponseTimeMs > a.MaxMilliseconds {
+		return fmt.Errorf("response time %dms exceeded maximum %dms", 
+			ctx.ResponseTimeMs, a.MaxMilliseconds)
+	}
+	return nil
+}
+
+// ResponseTimeAssertionFactory creates response time assertions
+type ResponseTimeAssertionFactory struct{}
+
+// Create returns a new ResponseTimeAssertion
+func (f *ResponseTimeAssertionFactory) Create(key string, expected interface{}) (reqassert.Assertion, error) {
+	// Convert expected to int
+	maxTime, ok := expected.(int)
+	if !ok {
+		if floatVal, isFloat := expected.(float64); isFloat {
+			maxTime = int(floatVal)
+		} else {
+			return nil, fmt.Errorf("response time must be an integer (milliseconds), got %T", expected)
+		}
+	}
+	
+	return &ResponseTimeAssertion{MaxMilliseconds: maxTime}, nil
+}
+
+// Example usage:
+// 
+// To register this assertion type:
+//
+// ```go
+// builder := reqassert.NewBuilder()
+// builder.RegisterType("responseTime", &ResponseTimeAssertionFactory{})
+// ```
+//
+// Then in YAML test definitions:
+//
+// ```yaml
+// assertions:
+//   responseTime: 500  # Assert response time is under 500ms
+//   status: 200
+//   # other assertions...
+// ```
+//
+// Note: To make this work, you would need to extend the AssertionContext type to include response time:
+//
+// ```go
+// type AssertionContext struct {
+//   StatusCode     int
+//   Headers        map[string]string
+//   Body           []byte
+//   BodyMap        map[string]interface{}
+//   ResponseTimeMs int // Add this field
+// }
+// ```
+//
+// And update the PrepareContext method to include it.

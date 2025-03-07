@@ -2,5 +2,6 @@
 .goose
 .vscode
 CLAUDE.md
+claude
 bin
 logs

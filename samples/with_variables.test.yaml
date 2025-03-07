@@ -1,0 +1,37 @@
+name: Simple Sample with Variables
+description: This is a simple sample
+variables:
+  apikey:
+    type: string
+    value: ${env:API_KEY}
+  scope: 
+    type: string
+    value: some_scope_value
+suites:
+  - name: Test HTTP verbs
+    cases:
+      - title: A GET request
+        request:
+          method: POST
+          url: http://httpbin.org/post
+          headers:
+            - key: content-type
+              value: application/json
+          body:
+            type: json
+            Data: |
+              {
+                "apikey": "${apikey}",
+                "scope": "${scope}"
+              }
+          assertions:
+            status: 200
+            headers:
+              - path: content-type
+                operator: eq
+                expected: application/json
+            body:
+              - path: url
+                operator: eq
+                expected: http://httpbin.org/post
+          

@@ -1,15 +1,23 @@
 package tests
 
+import "fmt"
+
 type TestDefinition struct {
-	// Name of the test definition
+	// Path is the path to the test definition file
+	Path string
 	// Name is the identifier for the test definition. It is used to reference the test in logs, reports, and commands.
 	Name string `yaml:"name" json:"name"`
 	// Description of the test definition
 	Description string `yaml:"description" json:"description"`
 	// Variables to be used in the test definition
-	Variables map[string]interface{} `yaml:"variables" json:"variables"`
+	Variables map[string]Variable `yaml:"variables" json:"variables"`
 	// Test suites to be executed
 	Suites []TestSuite `yaml:"suites" json:"suites"`
+}
+
+type Variable struct {
+	Type  string `yaml:"type" json:"type"`
+	Value string `yaml:"value" json:"value"`
 }
 
 // TestSuite represent a suite of test cases
@@ -18,6 +26,8 @@ type TestSuite struct {
 	Name string `yaml:"name" json:"name"`
 	// Cases to test for in the suite
 	Cases []TestCase `yaml:"cases" json:"cases"`
+	// Variables available for test cases in this suite
+	Variables map[string]Variable
 }
 
 // TestCase represent a test case to be executed
@@ -39,7 +49,7 @@ type Request struct {
 	// Body is the body to be sent in the request
 	Body RequestBody `yaml:"body" json:"body"`
 	// Assertions are the assertions to be made on the response
-	Assertions ResponseAssertion `yaml:"assertions" json:"assertions"`
+	Assertions map[string]interface{} `yaml:"assertions" json:"assertions"`
 }
 
 type RequestBody struct {
@@ -52,6 +62,7 @@ type RequestHeader struct {
 	Value string `yaml:"value" json:"value"`
 }
 
+// Legacy assertion types - kept for backward compatibility
 type ResponseAssertion struct {
 	Status  int         `yaml:"status" json:"status"`
 	Body    []Assertion `yaml:"body" json:"body"`
@@ -62,4 +73,22 @@ type Assertion struct {
 	Path     string `yaml:"path" json:"path"`
 	Operator string `yaml:"operator" json:"operator"`
 	Expected any    `yaml:"expected" json:"expected"`
+}
+
+func (def *TestDefinition) Validate() error {
+	if def.Name == "" {
+		return fmt.Errorf("test definition name is required")
+	}
+
+	if len(def.Suites) == 0 {
+		return fmt.Errorf("test definition must have at least one suite")
+	}
+
+	for _, suite := range def.Suites {
+		if suite.Name == "" {
+			return fmt.Errorf("suite name is required")
+		}
+	}
+
+	return nil
 }

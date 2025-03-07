@@ -1,0 +1,109 @@
+name: "Advanced Assertions Example"
+description: "Demonstrates the new assertion framework capabilities"
+variables:
+  base_url:
+    value: "https://core.staging.fleetcontrols.io/v1"
+    type: string
+
+suites:
+  - name: "API Tests"
+    cases:
+      - title: "Get Countries Status Assertion"
+        request:
+          method: GET
+          url: "${base_url}/static/countries"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200  # Simple status assertion
+      
+      - title: "Get Countries Response Format"
+        request:
+          method: GET
+          url: "${base_url}/static/countries"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              "$.status": "success"
+              "$.countries[0].countryCode": "NG"
+              "$.countries[0].countryName": "Nigeria"
+      
+      - title: "Check Last Country"
+        request:
+          method: GET
+          url: "${base_url}/static/countries"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              "$.countries[7].countryCode": "CA"  # Last country in array
+              "$.countries[7].countryName": "Canada"
+      
+      - title: "Validate Countries Schema"
+        request:
+          method: GET
+          url: "${base_url}/static/countries"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            schema: |
+              {
+                "type": "object",
+                "required": ["status", "countries"],
+                "properties": {
+                  "status": { "type": "string" },
+                  "countries": { 
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["countryCode", "countryName", "currencyCode", "id"],
+                      "properties": {
+                        "countryCode": { "type": "string" },
+                        "countryName": { "type": "string" },
+                        "currencyCode": { "type": "string" },
+                        "createdAt": { "type": "string", "format": "date-time" },
+                        "updatedAt": { "type": "string", "format": "date-time" },
+                        "enabled": { "type": "boolean" },
+                        "id": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+      
+      - title: "Check Specific Country"
+        request:
+          method: GET
+          url: "${base_url}/static/countries"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              "$.countries[3].countryCode": "US"
+              "$.countries[3].countryName": "United States"
+              "$.countries[3].currencyCode": "USD"

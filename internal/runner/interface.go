@@ -4,7 +4,8 @@ import "github.com/mrfoh/httpprobe/internal/tests"
 
 type TestRunner interface {
 	GetTestDefinitions(params *GetTestDefinitionsParams) ([]*tests.TestDefinition, error)
-	Execute(definition []*tests.TestDefinition) (ExecutionResult, error)
+	Execute(definition []*tests.TestDefinition) (map[string]tests.TestDefinitionExecResult, error)
+	Write(results map[string]tests.TestDefinitionExecResult)
 }
 
 type GetTestDefinitionsParams struct {
@@ -13,5 +14,3 @@ type GetTestDefinitionsParams struct {
 	// FileExtensions is a list of file extensions to include in the search
 	FileExtensions []string
 }
-
-type ExecutionResult struct{}

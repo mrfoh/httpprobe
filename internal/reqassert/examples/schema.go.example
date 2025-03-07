@@ -1,0 +1,90 @@
+package examples
+
+import (
+	"fmt"
+
+	"github.com/mrfoh/httpprobe/internal/reqassert"
+	"github.com/xeipuuv/gojsonschema"
+)
+
+// SchemaAssertion validates JSON response against a JSON Schema
+type SchemaAssertion struct {
+	SchemaJSON string
+}
+
+// Validate checks if the response body matches the expected JSON schema
+func (a *SchemaAssertion) Validate(ctx *reqassert.AssertionContext) error {
+	// Create schema loader
+	schemaLoader := gojsonschema.NewStringLoader(a.SchemaJSON)
+	
+	// Create document loader from response body
+	documentLoader := gojsonschema.NewGoLoader(ctx.BodyMap)
+	
+	// Validate
+	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
+		return fmt.Errorf("schema validation error: %w", err)
+	}
+	
+	// Check validation result
+	if !result.Valid() {
+		// Collect all validation errors
+		errors := ""
+		for i, err := range result.Errors() {
+			if i > 0 {
+				errors += "; "
+			}
+			errors += err.String()
+		}
+		return fmt.Errorf("schema validation failed: %s", errors)
+	}
+	
+	return nil
+}
+
+// SchemaAssertionFactory creates schema assertions
+type SchemaAssertionFactory struct{}
+
+// Create returns a new SchemaAssertion
+func (f *SchemaAssertionFactory) Create(key string, expected interface{}) (reqassert.Assertion, error) {
+	// Key is ignored for schema assertions
+	
+	// Convert expected to string (should be a JSON schema)
+	schemaJSON, ok := expected.(string)
+	if !ok {
+		return nil, fmt.Errorf("schema must be a string containing JSON schema, got %T", expected)
+	}
+	
+	return &SchemaAssertion{SchemaJSON: schemaJSON}, nil
+}
+
+// Example usage:
+// 
+// To register this assertion type:
+//
+// ```go
+// builder := reqassert.NewBuilder()
+// builder.RegisterType("schema", &SchemaAssertionFactory{})
+// ```
+//
+// Then in YAML test definitions:
+//
+// ```yaml
+// assertions:
+//   schema: |
+//     {
+//       "type": "object",
+//       "required": ["id", "name"],
+//       "properties": {
+//         "id": { "type": "integer" },
+//         "name": { "type": "string" },
+//         "tags": { 
+//           "type": "array",
+//           "items": { "type": "string" }
+//         }
+//       }
+//     }
+//   status: 200
+// ```
+//
+// Note: This assertion requires the "github.com/xeipuuv/gojsonschema" package.

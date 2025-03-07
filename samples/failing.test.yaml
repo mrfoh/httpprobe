@@ -1,0 +1,29 @@
+name: Failing Sample
+description: This is a failing sample
+suites:
+  - name: Authentication
+    cases:
+      - title: /auth/login
+        request:
+          method: POST
+          url: https://core.staging.fleetcontrols.io/v1/auth/local
+          headers:
+            - key: content-type
+              value: application/json
+          body:
+            type: json
+            data: |
+              {
+                "identity": "patrickfoh@gmail.com",
+                "password": "snknglknklnslk"
+              }
+          assertions:
+            status: 200
+            headers:
+              - path: content-type
+                operator: eq
+                expected: application/json
+            body:
+              - path: token
+                operator: eq
+                expected: some_token

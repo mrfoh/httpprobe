@@ -20,4 +20,29 @@ suites:
               - path: url
                 operator: eq
                 expected: http://httpbin.org/get
+      - title: A POST request
+        request:
+          method: POST
+          url: http://httpbin.org/post
+          headers:
+            - key: content-type
+              value: application/json
+          body:
+            type: json
+            data: |
+              {
+                "name": "john",
+                "message": "hello"
+              }
+          assertions:
+            status: 200
+            headers:
+              - path: content-type
+                operator: eq
+                expected: application/json
+            body:
+              - path: json.name
+                operator: eq
+                expected: john
+
           
