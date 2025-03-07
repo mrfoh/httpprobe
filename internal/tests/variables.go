@@ -11,10 +11,9 @@ import (
 	"math/rand"
 )
 
-// init initializes the random number generator
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+// Define a global random source
+var randomSource = rand.NewSource(time.Now().UnixNano())
+var random = rand.New(randomSource)
 
 // LoadEnvFile loads environment variables from a file
 // Environment variables in the file should be in the format KEY=VALUE
@@ -150,7 +149,7 @@ func processRandomFunction(args []string) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	result := make([]byte, length)
 	for i := range result {
-		result[i] = charset[rand.Intn(len(charset))]
+		result[i] = charset[random.Intn(len(charset))]
 	}
 	
 	return string(result)

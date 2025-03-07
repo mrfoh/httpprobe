@@ -6,7 +6,7 @@ suites:
       - title: Using ENV variables directly in the request
         request:
           method: POST
-          url: ${env:BASE_URL}/post
+          url: http://httpbin.org/post
           headers:
             - key: Authorization
               value: Bearer ${env:API_KEY}
@@ -30,3 +30,9 @@ suites:
               - path: json.environment
                 operator: eq
                 expected: development
+              - path: headers.Authorization
+                operator: eq
+                expected: "Bearer test-api-key"
+              - path: headers.X-Environment
+                operator: eq
+                expected: "development"
