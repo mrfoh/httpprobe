@@ -1,0 +1,45 @@
+title: HttpProbe Documentation
+description: Documentation for the HttpProbe API testing tool
+theme: just-the-docs
+
+url: https://mrfoh.github.io/httpprobe
+baseurl: /httpprobe
+
+aux_links:
+  "HttpProbe on GitHub":
+    - "//github.com/mrfoh/httpprobe"
+
+# Footer content
+# appears at the bottom of every page's main content
+footer_content: "Copyright &copy; 2023 HttpProbe. Distributed under an MIT license."
+
+# Footer "Edit this page on GitHub" link text
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: "https://github.com/mrfoh/httpprobe"
+gh_edit_branch: "main"
+gh_edit_source: docs
+gh_edit_view_mode: "tree"
+
+# Heading anchor links appear on hover over h1-h6 tags
+# in page content allowing users to deep link to a particular heading
+heading_anchors: true
+
+# Color scheme for the navigation
+color_scheme: light
+
+# Search settings
+search_enabled: true
+search:
+  heading_level: 4
+  previews: 3
+  preview_words_before: 5
+  preview_words_after: 10
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: false
+
+# Enable mermaid diagrams
+mermaid:
+  enabled: true
+  version: "9.1.7"
