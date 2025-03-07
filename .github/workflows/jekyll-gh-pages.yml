@@ -34,6 +34,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd docs
+          gem install bundler:2.4.19
           bundle install
       
       - name: Build site
