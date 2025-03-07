@@ -1,0 +1,105 @@
+name: Pull Request
+
+# Status check configuration
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    paths:
+      - 'cmd/**/*'
+      - 'pkg/**/*'
+      - 'internal/**/*'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/pull-request.yml'
+      - 'Makefile'
+
+jobs:
+  integration:
+    strategy:
+      # Add fail-fast to ensure all matrix jobs complete even if one fails
+      fail-fast: false
+      matrix:
+        config:
+          - job_name: Test
+            go_version: 1.23.3
+            cmd: |
+              make test
+          - job_name: Lint
+            go_version: 1.23.3
+            cmd: |
+              go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+              make lint
+    
+    name: ${{ matrix.config.job_name }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.config.go_version }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # Initialize the status check
+      - name: Create Status Check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: '${{ matrix.config.job_name }}',
+              head_sha: context.payload.pull_request.head.sha,
+              status: 'in_progress',
+              started_at: new Date().toISOString()
+            });
+
+      # Run the actual checks
+      - name: Run ${{ matrix.config.job_name }}
+        id: run_check
+        continue-on-error: true
+        run: ${{ matrix.config.cmd }}
+
+      # Update the status check with the results
+      - name: Update Status Check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const conclusion = '${{ steps.run_check.outcome }}' === 'success' ? 'success' : 'failure';
+            
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: '${{ matrix.config.job_name }}',
+              head_sha: context.payload.pull_request.head.sha,
+              status: 'completed',
+              conclusion: conclusion,
+              completed_at: new Date().toISOString(),
+              output: {
+                title: '${{ matrix.config.job_name }} Results',
+                summary: conclusion === 'success' 
+                  ? '✅ All checks passed successfully'
+                  : '❌ Some checks failed - please review the logs'
+              }
+            });
+
+      # Fail the workflow if the check failed
+      - name: Check Result
+        if: steps.run_check.outcome != 'success'
+        run: exit 1
