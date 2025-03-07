@@ -168,39 +168,3 @@ func validateWithAssertions(resp *easyreq.HttpResponse, assertionsData map[strin
 	return len(validationErrors) == 0, validationErrors, nil
 }
 
-// Legacy validation method for backward compatibility
-func validateResponse(resp *easyreq.HttpResponse, assertions ResponseAssertion, logger logging.Logger) (bool, []error, error) {
-	// Convert to new assertion format
-	assertionsMap := make(map[string]interface{})
-
-	// Add status assertion
-	if assertions.Status > 0 {
-		assertionsMap["status"] = assertions.Status
-	}
-
-	// Add header assertions
-	if len(assertions.Headers) > 0 {
-		headers := make(map[string]interface{})
-		for _, assertion := range assertions.Headers {
-			headers[assertion.Path] = assertion.Expected
-		}
-		assertionsMap["headers"] = headers
-	}
-
-	// Add body assertions
-	if len(assertions.Body) > 0 {
-		body := make(map[string]interface{})
-		for _, assertion := range assertions.Body {
-			// Handle operators by prefixing the expected value
-			if assertion.Operator != "" && assertion.Operator != "eq" && assertion.Operator != "equals" {
-				expectedStr := fmt.Sprintf("%s %v", assertion.Operator, assertion.Expected)
-				body[assertion.Path] = expectedStr
-			} else {
-				body[assertion.Path] = assertion.Expected
-			}
-		}
-		assertionsMap["body"] = body
-	}
-
-	return validateWithAssertions(resp, assertionsMap, logger)
-}

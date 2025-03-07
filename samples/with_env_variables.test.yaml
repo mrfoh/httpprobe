@@ -1,0 +1,38 @@
+name: Sample with Environment Variables
+description: This test uses environment variables directly with ${env:VARIABLE_NAME} syntax
+suites:
+  - name: Environment Variable Tests
+    cases:
+      - title: Using ENV variables directly in the request
+        request:
+          method: POST
+          url: http://httpbin.org/post
+          headers:
+            - key: Authorization
+              value: Bearer ${env:API_KEY}
+            - key: X-Environment
+              value: ${env:ENV_NAME}
+          body:
+            type: json
+            data:
+              baseUrl: ${env:BASE_URL}
+              environment: ${env:ENV_NAME}
+          assertions:
+            status: 200
+            headers:
+              - path: content-type
+                operator: eq
+                expected: application/json
+            body:
+              - path: json.baseUrl
+                operator: eq
+                expected: https://api.example.com
+              - path: json.environment
+                operator: eq
+                expected: development
+              - path: headers.Authorization
+                operator: eq
+                expected: "Bearer test-api-key"
+              - path: headers.X-Environment
+                operator: eq
+                expected: "development"
