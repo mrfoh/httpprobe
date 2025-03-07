@@ -37,153 +37,155 @@ The main commands are:
 The most common command is `run`, which executes test definitions:
 
 ```bash
-httpprobe run [test-files...] [options]
+httpprobe run [options]
 ```
 
-### Running a Single Test File
+### Running Tests in Current Directory
 
 ```bash
-httpprobe run test.yaml
+httpprobe run
 ```
 
-### Running Multiple Test Files
+### Running Tests in a Specific Directory
 
 ```bash
-httpprobe run test1.yaml test2.yaml test3.yaml
+httpprobe run --searchpath ./tests/
 ```
 
-### Running All Tests in a Directory
+### Running Only Specific Test Files
 
 ```bash
-httpprobe run ./tests/
-```
-
-### Running Tests with Glob Pattern
-
-```bash
-httpprobe run ./tests/*.yaml
+httpprobe run --include *.test.json
 ```
 
 ## Command Line Options
 
-HttpProbe supports several command line options to customize test execution and output.
+HttpProbe supports several command line options to customize test execution and output. Here's a complete reference of all available flags:
+
+| Flag | Description | Default |
+| ---- | ----------- | ------- |
+| `-c, --concurrency` | Number of concurrent test definitions to execute | 2 |
+| `-e, --envfile` | Environment file to load environment variables from | `.env` |
+| `-i, --include` | Include tests with the specified extensions | `.test.yaml, .test.json` |
+| `-o, --output` | Output format to use (text, json, table) | `text` |
+| `-p, --searchpath` | Path to search for test files | `./` |
+| `-v, --verbose` | Enable verbose output | `false` |
+| `-h, --help` | Display help information | - |
 
 ### Output Format
 
 Control how test results are displayed:
 
 ```bash
-httpprobe run test.yaml --output text|table|json
+httpprobe run --output text|table|json
 ```
 
 - `text` (default) - Human-readable output with colors for pass/fail status
 - `table` - Tabular format for more compact display
-- `json` - JSON format for programmatic processing (saved to `test-results.json`)
+- `json` - JSON format for programmatic processing
 
 ### Concurrency
 
-Control how many tests run in parallel:
+Control how many test definitions run in parallel:
 
 ```bash
-httpprobe run test.yaml --concurrency 5
+httpprobe run --concurrency 5
 ```
 
-The default concurrency is 1 (sequential execution). Increasing this value can significantly speed up test execution, especially for tests with high latency.
+The default concurrency is 2. Increasing this value can significantly speed up test execution, especially for tests with high latency.
 
-### Log Level
+### Verbose Output
 
-Control the verbosity of logging:
+Enable detailed output for debugging:
 
 ```bash
-httpprobe run test.yaml --log-level debug|info|warn|error
+httpprobe run --verbose
 ```
 
-- `debug` - Most verbose, shows all details including request/response information
-- `info` (default) - Shows general execution information
-- `warn` - Shows only warnings and errors
-- `error` - Shows only errors
+### Environment File
 
-### Log File
-
-Save logs to a file instead of displaying them in the console:
+Load environment variables from a file:
 
 ```bash
-httpprobe run test.yaml --log-file ./logs/test-run.log
+httpprobe run --envfile .env.test
 ```
 
-### Timeout
+Default is `.env`. This is useful for loading different environment variables for different environments.
 
-Set a timeout for HTTP requests:
+### Include Pattern
+
+Specify which file extensions to include as test definitions:
 
 ```bash
-httpprobe run test.yaml --timeout 30s
+httpprobe run --include .test.yaml,.test.json
 ```
 
-Default timeout is 30 seconds. The value can be specified in seconds (`30s`), milliseconds (`5000ms`), or minutes (`2m`).
+Default includes `.test.yaml` and `.test.json` files. This allows you to filter which test files to run.
 
-### Variables
+### Search Path
 
-Override or add variables at runtime:
+Specify the path to search for test files:
 
 ```bash
-httpprobe run test.yaml --set base_url=https://api.staging.example.com
+httpprobe run --searchpath ./tests/api/
 ```
 
-You can specify multiple variables:
-
-```bash
-httpprobe run test.yaml --set base_url=https://api.staging.example.com --set api_key=test-key
-```
-
-This is useful for:
-- Testing against different environments
-- CI/CD pipelines where values are passed in at runtime
-- Quick testing without modifying test files
+Default is the current directory (`./`). This allows you to specify which directory to scan for test files.
 
 ## Complete Command Examples
 
 ### Basic Test Run
 
 ```bash
-httpprobe run ./tests/api-tests.yaml
+httpprobe run
 ```
 
-### Production Test Run
+### Run Tests in a Specific Directory
 
 ```bash
-httpprobe run ./tests/api-tests.yaml --set base_url=https://api.production.example.com --set api_key=${PROD_API_KEY}
+httpprobe run --searchpath ./tests/api/
 ```
 
 ### Fast Parallel Execution
 
 ```bash
-httpprobe run ./tests/*.yaml --concurrency 10 --timeout 60s
+httpprobe run --concurrency 10
 ```
 
 ### CI/CD Integration
 
 ```bash
-httpprobe run ./tests/*.yaml --output json --log-level error --log-file ./logs/test-run.log
+httpprobe run --output json --searchpath ./tests/
 ```
 
-### Debugging a Specific Test
+### Debugging Tests
 
 ```bash
-httpprobe run ./tests/failing-test.yaml --log-level debug
+httpprobe run --verbose
 ```
 
 ## Environment Variables
 
-HttpProbe also supports configuration via environment variables:
+HttpProbe can load environment variables from a file specified with `--envfile`. These variables can be accessed in your test definitions using the `${ENV:VARIABLE_NAME}` syntax.
 
-| Environment Variable | Description | Default |
-| -------------------- | ----------- | ------- |
-| `HTTPPROBE_LOG_LEVEL` | Log level (debug, info, warn, error) | info |
-| `HTTPPROBE_TIMEOUT` | Default request timeout | 30s |
-| `HTTPPROBE_CONCURRENCY` | Default concurrency level | 1 |
-| `HTTPPROBE_OUTPUT` | Default output format | text |
+For example, if your `.env` file contains:
 
-Environment variables are overridden by command line options.
+```
+API_KEY=secret-key
+BASE_URL=https://api.example.com
+```
+
+You can reference these in your test definitions:
+
+```yaml
+- name: Get user profile
+  request:
+    url: ${ENV:BASE_URL}/profile
+    headers:
+      Authorization: Bearer ${ENV:API_KEY}
+```
+
+This allows you to keep sensitive information out of your test files and change configurations based on environment.
 
 ## Exit Codes
 
