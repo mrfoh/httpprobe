@@ -75,8 +75,12 @@ jobs:
         run: echo "VERSION=$(echo ${{ github.ref }} | cut -d '/' -f 3)" >> $GITHUB_ENV
 
       - name: Build
+        env:
+          GOOS: ${{ matrix.platform }}
+          GOARCH: ${{ matrix.arch }}
         run: |
-          GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} make build
+          make build
+          ls -la bin
           
       - name: Prepare artifact
         run: |
