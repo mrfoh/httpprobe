@@ -66,6 +66,7 @@ HttpProbe supports several command line options to customize test execution and 
 | ---- | ----------- | ------- |
 | `-c, --concurrency` | Number of concurrent test definitions to execute | 2 |
 | `-e, --envfile` | Environment file to load environment variables from | `.env` |
+| `-f, --outputfile` | File to write test results to | - |
 | `-i, --include` | Include tests with the specified extensions | `.test.yaml, .test.json` |
 | `-o, --output` | Output format to use (text, json, table) | `text` |
 | `-p, --searchpath` | Path to search for test files | `./` |
@@ -83,6 +84,16 @@ httpprobe run --output text|table|json
 - `text` (default) - Human-readable output with colors for pass/fail status
 - `table` - Tabular format for more compact display
 - `json` - JSON format for programmatic processing
+
+### Output File
+
+Specify a file to write test results to:
+
+```bash
+httpprobe run --output json --outputfile test-results.json
+```
+
+This is particularly useful when using the JSON output format and wanting to save results for later analysis or CI/CD integration.
 
 ### Concurrency
 
@@ -155,7 +166,7 @@ httpprobe run --concurrency 10
 ### CI/CD Integration
 
 ```bash
-httpprobe run --output json --searchpath ./tests/
+httpprobe run --output json --outputfile results.json --searchpath ./tests/
 ```
 
 ### Debugging Tests

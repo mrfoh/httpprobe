@@ -20,6 +20,7 @@ func NewRunCmd() *cobra.Command {
 			concurrency, _ := cmd.Flags().GetInt("concurrency")
 			verbose, _ := cmd.Flags().GetBool("verbose")
 			output, _ := cmd.Flags().GetString("output")
+			outputfile, _ := cmd.Flags().GetString("outputfile")
 			envFile, _ := cmd.Flags().GetString("envfile")
 
 			// Load environment variables from file
@@ -55,7 +56,7 @@ func NewRunCmd() *cobra.Command {
 
 			parser := tests.NewTestDefinitionParser()
 
-			writer := tests.NewResultWriter(output)
+			writer := tests.NewResultWriter(output, outputfile)
 
 			runnerOptions := runner.NewOptions().
 				SetLogger(logger).
@@ -84,6 +85,8 @@ func NewRunCmd() *cobra.Command {
 			testrunner.Write(results)
 		},
 	}
+
+	cmd.Flags().StringP("outputfile", "f", "", "Output file to write results to")
 
 	return cmd
 }
