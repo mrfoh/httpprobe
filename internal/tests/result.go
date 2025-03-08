@@ -12,6 +12,8 @@ type TestDefinitionExecResult struct {
 type TestSuiteResult struct {
 	// Cases is a map of test case titles to their results
 	Cases map[string]TestCaseResult
+	// Variables contains any variables defined or exported during suite execution
+	Variables map[string]Variable
 }
 
 // TestCaseResult is the result of executing a test case
