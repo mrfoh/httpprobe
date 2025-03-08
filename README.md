@@ -11,7 +11,9 @@ A powerful HTTP API testing tool for defining, running, and validating API tests
 - **Rich Assertions**: Validate status codes, headers, and response bodies with detailed failure reporting
 - **Schema Validation**: Verify response structures with JSON schema
 - **Multiple Output Formats**: View results in text, table, or JSON formats
-- **Concurrency**: Run tests in parallel for faster execution
+- **Concurrency**: Run test definitions and test cases in parallel for faster execution
+- **Test Lifecycle Hooks**: Run setup and teardown operations before/after tests
+- **Response Value Export**: Extract and reuse values from responses in subsequent tests
 - **Flexible Logging**: Configurable logging levels and formats
 
 ## Installation

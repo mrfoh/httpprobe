@@ -8,7 +8,7 @@ description: "Learn how to use dynamic values in your test definitions."
 # Variable Interpolation
 {: .no_toc }
 
-Variable interpolation allows you to make your tests dynamic by substituting values at runtime. This feature is essential for creating reusable and flexible test definitions.
+HttpProbe provides powerful variable interpolation capabilities that make your test definitions reusable and dynamic.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -19,49 +19,50 @@ Variable interpolation allows you to make your tests dynamic by substituting val
 
 ---
 
-## Introduction
-
-Variables in HttpProbe are placeholders that get replaced with actual values when tests are executed. They use the syntax `${variable_name}` and can be used in:
-
-- URLs
-- Header values
-- Request bodies
-- And more
-
-Variables help you:
-
-- **Keep tests DRY** (Don't Repeat Yourself) by defining values once
-- **Handle environment-specific values** like API keys and base URLs
-- **Create dynamic data** for each test run
-- **Make tests more readable** by using descriptive variable names
-
 ## Variable Types
 
 HttpProbe supports several types of variables:
 
-### 1. Simple Variables
+1. **Defined Variables** - Values defined in your test definition
+2. **Environment Variables** - Values loaded from your system environment or `.env` file
+3. **Function Calls** - Dynamic values generated at runtime
+4. **Exported Variables** - Values extracted from response bodies during test execution
 
-These are defined in the `variables` section of your test definition:
+## Defining Variables
+
+Variables can be defined at the test definition level or within a test suite:
 
 ```yaml
+name: Example with Variables
 variables:
   base_url:
     type: string
-    value: "https://api.example.com/v1"
-  max_items:
+    value: "https://api.example.com"
+  api_key:
     type: string
-    value: "100"
+    value: "${env:API_KEY}"
+
+suites:
+  - name: User API
+    variables:
+      user_id:
+        type: string
+        value: "123"
+    cases:
+      - title: Get User
+        request:
+          method: GET
+          url: "${base_url}/users/${user_id}"
+          headers:
+            - key: Authorization
+              value: Bearer ${api_key}
 ```
 
-You can then reference these variables in your tests:
+Variables defined at the test definition level are available to all test suites, while suite-level variables are only available within that suite.
 
-```yaml
-url: "${base_url}/items?limit=${max_items}"
-```
+## Using Environment Variables
 
-### 2. Environment Variables
-
-Environment variables let you access values from the host environment:
+You can reference environment variables using the `${env:VAR_NAME}` syntax:
 
 ```yaml
 variables:
@@ -70,54 +71,131 @@ variables:
     value: "${env:API_KEY}"
 ```
 
-This will substitute the value of the `API_KEY` environment variable at runtime. This is particularly useful for:
+Environment variables can be loaded from:
 
-- **Sensitive information** like API keys and tokens
-- **Environment-specific settings** that change between development, staging, and production
-- **CI/CD pipelines** where environment variables are commonly used for configuration
+1. Your system environment
+2. A `.env` file in the current directory
+3. A specific environment file specified with the `--envfile` option
 
-### 3. Function Variables
+Example `.env` file:
 
-HttpProbe also supports function-like syntax for generating dynamic values:
+```
+API_KEY=abc123secret
+API_URL=https://api.example.com
+```
 
-#### Random Strings
+## Dynamic Functions
+
+HttpProbe supports these built-in functions:
+
+### Random String Generation
+
+Generate a random string of a specified length:
 
 ```yaml
 variables:
-  request_id:
+  random_id:
     type: string
-    value: "${random(16)}"  # Generates a 16-character random string
+    value: "${random(10)}"  # Generates a 10-character random string
 ```
 
-The `random()` function generates a random alphanumeric string of the specified length.
+### Timestamp Generation
 
-#### Timestamps
+Generate the current timestamp in a specified format:
 
 ```yaml
 variables:
   current_date:
     type: string
-    value: "${timestamp(2006-01-02)}"  # Current date in YYYY-MM-DD format
+    value: "${timestamp(2006-01-02)}"  # Format: YYYY-MM-DD
 ```
 
-The `timestamp()` function generates the current date/time in the specified format. It uses Go's time formatting syntax.
+The format uses Go's time formatting syntax.
 
-Common timestamp formats:
+## Exporting Response Values as Variables
 
-| Format | Description | Example |
-| ------ | ----------- | ------- |
-| `2006-01-02` | ISO date | "2023-11-05" |
-| `2006-01-02T15:04:05Z` | ISO datetime | "2023-11-05T13:45:30Z" |
-| `15:04:05` | Time only | "13:45:30" |
-| `Mon, 02 Jan 2006` | RFC format | "Sun, 05 Nov 2023" |
+You can extract values from response bodies and use them in subsequent test cases. This is particularly useful for authentication flows, where you need to extract a token from a login response and use it in subsequent API calls.
 
-## Variable Scope
+To export a value from a response body, use the `export` property in your request:
 
-Variables defined at the test definition level are available to all test suites and cases within that definition. This allows you to define common values once and reuse them throughout your tests.
+```yaml
+export:
+  body:
+    - path: "$.data.token"
+      as: "access_token"
+    - path: "$.data.refresh_token"
+      as: "refresh_token"
+```
 
-## Where Variables Can Be Used
+The `path` property uses JSONPath syntax to locate the value in the response body, and the `as` property defines the variable name that will be created.
 
-You can use variables in many places within your test definitions:
+Here's a complete example demonstrating variable exports:
+
+```yaml
+name: Login API Test with Value Export
+description: Tests login API and exports tokens for subsequent requests
+variables:
+  base_url:
+    type: string
+    value: "https://api.example.com"
+  username:
+    type: string
+    value: "testuser"
+  password:
+    type: string
+    value: "password123"
+suites:
+  - name: Authentication
+    cases:
+      - title: Login to get token
+        request:
+          method: POST
+          url: "${base_url}/login"
+          headers:
+            - key: content-type
+              value: application/json
+          body:
+            type: json
+            data: |
+              {
+                "username": "${username}",
+                "password": "${password}"
+              }
+          assertions:
+            status: 200
+            headers:
+              content-type: "application/json"
+            body:
+              $.success: true
+          export:
+            body:
+              - path: "$.data.token"
+                as: "access_token"
+              - path: "$.data.refresh_token"
+                as: "refresh_token"
+              - path: "$.data.expires_in"
+                as: "token_expires"
+      
+      - title: Get user profile using exported token
+        request:
+          method: GET
+          url: "${base_url}/profile"
+          headers:
+            - key: Authorization
+              value: "Bearer ${access_token}"
+            - key: content-type
+              value: application/json
+          assertions:
+            status: 200
+            body:
+              $.username: "${username}"
+```
+
+In this example, the login response contains a token that is exported as `access_token` and used in the subsequent request to get the user profile.
+
+## Variable Usage Examples
+
+Variables can be used in various parts of your test definition:
 
 ### In URLs
 
@@ -130,105 +208,47 @@ url: "${base_url}/users/${user_id}"
 ```yaml
 headers:
   - key: Authorization
-    value: Bearer ${api_token}
+    value: Bearer ${api_key}
   - key: X-Request-ID
-    value: ${request_id}
+    value: ${random(8)}
 ```
 
-### In JSON Bodies
+### In Request Bodies
 
 ```yaml
 body:
   type: json
-  data: |
-    {
-      "name": "John Doe",
-      "email": "john@example.com",
-      "token": "${api_token}",
-      "created_at": "${timestamp(2006-01-02T15:04:05Z)}",
-      "request_id": "${random(10)}"
-    }
+  data:
+    username: "${username}"
+    timestamp: "${timestamp(2006-01-02T15:04:05Z)}"
 ```
 
-## Variable Resolution Process
-
-Variables are resolved in the following order:
-
-1. **Environment variables** (`${env:VAR_NAME}`) are resolved first
-2. **Simple variables** (`${variable_name}`) are resolved next
-3. **Function variables** (`${random()}`, `${timestamp()}`, etc.) are resolved last
-
-This means you can have a variable that references another variable, and it will be resolved correctly.
-
-## Examples
-
-### Basic Variable Usage
+### In Assertions
 
 ```yaml
-variables:
-  api_version:
-    type: string
-    value: "v1"
-  base_url:
-    type: string
-    value: "https://api.example.com/${api_version}"
+assertions:
+  body:
+    $.username: "${username}"
 ```
 
-### Environment Variable for Authentication
+## Variable Resolution Order
 
-```yaml
-variables:
-  jwt_token:
-    type: string
-    value: "${env:JWT_TOKEN}"
+When resolving variables, HttpProbe follows this order:
 
-suites:
-  - name: "Authenticated Tests"
-    cases:
-      - title: "Get Protected Resource"
-        request:
-          method: GET
-          url: "https://api.example.com/protected"
-          headers:
-            - key: Authorization
-              value: Bearer ${jwt_token}
-```
+1. Environment variables
+2. Test definition variables
+3. Test suite variables
+4. Exported variables (from previous test cases)
+5. Function calls
 
-### Dynamic Data for Each Request
+If a variable with the same name exists at multiple levels, the most specific one takes precedence.
 
-```yaml
-variables:
-  trace_id:
-    type: string
-    value: "${random(16)}"
-  current_time:
-    type: string
-    value: "${timestamp(2006-01-02T15:04:05Z)}"
+## Variable Best Practices
 
-suites:
-  - name: "Order API"
-    cases:
-      - title: "Create Order"
-        request:
-          method: POST
-          url: "https://api.example.com/orders"
-          headers:
-            - key: X-Trace-ID
-              value: ${trace_id}
-          body:
-            type: json
-            data: |
-              {
-                "product_id": "prod-123",
-                "quantity": 1,
-                "order_date": "${current_time}"
-              }
-```
-
-## Best Practices
-
-1. **Use descriptive variable names** that clearly indicate their purpose
-2. **Define common values as variables** to avoid duplication
-3. **Use environment variables for credentials** and sensitive information
-4. **Use dynamic functions for timestamps and IDs** to make tests more realistic
-5. **Keep variable definitions at the top** of your test file for better visibility
+1. Use variables for all values that might change between environments (URLs, credentials, etc.)
+2. Define reusable values at the test definition level
+3. Define test-specific values at the suite level
+4. Use environment variables for sensitive information like API keys and passwords
+5. Use random values for data that should be unique (IDs, email addresses, etc.)
+6. Create separate .env files for different environments (.env.dev, .env.prod)
+7. Use exported variables for values that need to be extracted from responses and used in subsequent requests

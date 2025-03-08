@@ -1,0 +1,29 @@
+name: Setup Example
+description: Login and get a token
+variables:
+  base_url:
+    type: string
+    value: "https://core.staging.fleetcontrols.io/v1"
+suites:
+  - name: Authentication
+    cases:
+      - title: /auth/local
+        request:
+          method: POST
+          url: ${base_url}/auth/local
+          headers:
+            - key: content-type
+              value: application/json
+          body:
+            type: json
+            data: |
+              {
+                "identity": "patrickfoh@gmail.com",
+                "password": "password"
+              }
+          assertions:
+            status: 200
+          export:
+            body:
+              - path: $.token
+                as: access_token

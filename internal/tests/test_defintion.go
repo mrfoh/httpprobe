@@ -11,6 +11,14 @@ type TestDefinition struct {
 	Description string `yaml:"description" json:"description"`
 	// Variables to be used in the test definition
 	Variables map[string]Variable `yaml:"variables" json:"variables"`
+	// Other test definitions to be executed before the test suites in this definition are run
+	BeforeAll []string `yaml:"before_all" json:"before_all"`
+	// Other test definitions to be executed after the test suites in this definition are run
+	AfterAll []string `yaml:"after_all" json:"after_all"`
+	// Test definitions to be executed before each test suite in this definition
+	BeforeEach []string `yaml:"before_each" json:"before_each"`
+	// Test definitions to be executed after each test suite in this definition
+	AfterEach []string `yaml:"after_each"`
 	// Test suites to be executed
 	Suites []TestSuite `yaml:"suites" json:"suites"`
 }
@@ -28,6 +36,8 @@ type TestSuite struct {
 	Cases []TestCase `yaml:"cases" json:"cases"`
 	// Variables available for test cases in this suite
 	Variables map[string]Variable
+	// Configuration options for the test suite
+	Config map[string]interface{} `yaml:"config" json:"config"`
 }
 
 // TestCase represent a test case to be executed
@@ -50,6 +60,8 @@ type Request struct {
 	Body RequestBody `yaml:"body" json:"body"`
 	// Assertions are the assertions to be made on the response
 	Assertions map[string]interface{} `yaml:"assertions" json:"assertions"`
+	// Export is the data to be exported from the response
+	Export RequestExport `yaml:"export" json:"export"`
 }
 
 type RequestBody struct {
@@ -73,6 +85,18 @@ type Assertion struct {
 	Path     string `yaml:"path" json:"path"`
 	Operator string `yaml:"operator" json:"operator"`
 	Expected any    `yaml:"expected" json:"expected"`
+}
+
+type RequestExport struct {
+	// The data to be exported from the response body
+	Body []BodyExport `yaml:"body" json:"body"`
+}
+
+type BodyExport struct {
+	// Path is the JSON path to the data to be exported
+	Path string `yaml:"path" json:"path"`
+	// As is the name to be used when exporting the value from the response to the test context variables
+	As string `yaml:"as" json:"as"`
 }
 
 func (def *TestDefinition) Validate() error {
