@@ -1,4 +1,4 @@
-# HttpProbe
+# HttpProbe [![Linting/Tests](https://github.com/mrfoh/httpprobe/actions/workflows/main.yml/badge.svg?event=push)](https://github.com/mrfoh/httpprobe/actions/workflows/main.yml)
 
 A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON test definitions.
 
