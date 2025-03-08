@@ -451,6 +451,10 @@ suites:
             status: 200
             body:
               "$.token": "length > 0"
+          export:
+            body:
+              - path: $.token
+                as: access_token
               
       - title: "2. Create Order"
         request:
@@ -458,7 +462,7 @@ suites:
           url: "${order_url}/orders"
           headers:
             - key: Authorization
-              value: Bearer {{auth_token}}  # From previous test
+              value: Bearer ${access_token}  # From previous test
             - key: Content-Type
               value: application/json
           body:
@@ -480,6 +484,10 @@ suites:
             body:
               "$.orderId": "length > 0"
               "$.total": "> 0"
+          export:
+            body:
+              - path: $.orderId
+                as: order_id
               
       - title: "3. Process Payment"
         request:
@@ -487,14 +495,14 @@ suites:
           url: "${payment_url}/process"
           headers:
             - key: Authorization
-              value: Bearer {{auth_token}}
+              value: Bearer ${access_token}
             - key: Content-Type
               value: application/json
           body:
             type: json
             data: |
               {
-                "orderId": "{{order_id}}",
+                "orderId": "${order_id}",
                 "paymentMethod": "credit_card",
                 "cardDetails": {
                   "number": "4111111111111111",
@@ -511,10 +519,10 @@ suites:
       - title: "4. Check Order Status"
         request:
           method: GET
-          url: "${order_url}/orders/{{order_id}}"
+          url: "${order_url}/orders/${order_id}"
           headers:
             - key: Authorization
-              value: Bearer {{auth_token}}
+              value: Bearer ${access_token}
           body:
             type: json
             data: null
