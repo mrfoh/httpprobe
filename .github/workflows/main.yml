@@ -57,7 +57,7 @@ jobs:
               owner,
               repo,
               name: '${{ matrix.config.job_name }}',
-              head_sha: context.payload.pull_request.head.sha,
+              head_sha: context.sha,
               status: 'in_progress',
               started_at: new Date().toISOString()
             });
@@ -80,7 +80,7 @@ jobs:
               owner,
               repo,
               name: '${{ matrix.config.job_name }}',
-              head_sha: context.payload.pull_request.head.sha,
+              head_sha: context.sha,
               status: 'completed',
               conclusion: conclusion,
               completed_at: new Date().toISOString(),
