@@ -18,7 +18,7 @@ lint:
 
 build: prepare
 	@echo "Building for local environment..."
-	CGO_ENABLED=0 go build -o bin/$(BINARY_NAME) cmd/main.go	
+	CGO_ENABLED=0 go build -o bin/$(BINARY_NAME) cmd/main.go
 
 build-linux: prepare
 	@echo "Building for Linux (AMD64)..."

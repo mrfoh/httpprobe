@@ -87,6 +87,7 @@ jobs:
           mkdir -p dist
           if [[ "${{ matrix.platform }}" == "windows" ]]; then
             BINARY_PATH="bin/${{ env.BINARY_NAME }}.exe"
+            mv bin/${{ env.BINARY_NAME }} bin/${{ env.BINARY_NAME }}.exe
           else
             BINARY_PATH="bin/${{ env.BINARY_NAME }}"
           fi
