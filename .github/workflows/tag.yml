@@ -1,0 +1,134 @@
+name: Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  BINARY_NAME: "httpprobe"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22.0'
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Test
+        run: make test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux
+            arch: amd64
+          - platform: linux
+            arch: arm64
+          - platform: darwin
+            arch: amd64
+          - platform: darwin
+            arch: arm64
+          - platform: windows
+            arch: amd64
+          - platform: windows
+            arch: arm64
+          - platform: windows
+            arch: 386
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.3'
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Set version
+        id: version
+        run: echo "VERSION=$(echo ${{ github.ref }} | cut -d '/' -f 3)" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} make build
+          
+      - name: Prepare artifact
+        run: |
+          mkdir -p dist
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            BINARY_PATH="bin/${{ env.BINARY_NAME }}.exe"
+          else
+            BINARY_PATH="bin/${{ env.BINARY_NAME }}"
+          fi
+          
+          ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
+          
+          cp $BINARY_PATH dist/$ARTIFACT_NAME
+          cd dist && tar -czf $ARTIFACT_NAME.tar.gz $ARTIFACT_NAME
+          echo "ARTIFACT_PATH=dist/$ARTIFACT_NAME.tar.gz" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_PATH }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate Release Body
+        id: release_body
+        run: |
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "Changelog:" >> $GITHUB_OUTPUT
+          git log $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~10)..HEAD --oneline >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GH_PERSONAL_TOKEN }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.release_body.outputs.body }}
+          files: artifacts/**/*.tar.gz
