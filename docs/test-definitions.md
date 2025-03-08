@@ -8,7 +8,7 @@ description: "Learn how to structure HttpProbe test definition files."
 # Test Definitions
 {: .no_toc }
 
-Test definitions are the core of HttpProbe. They define your API tests in a declarative way, allowing you to focus on what you want to test rather than how to test it.
+Test definitions are the core of HttpProbe. They define your API tests in a declarative way, allowing you to focus on what you want to test rather than how to test it. Test definitions support hooks to run other tests before and after test execution, creating powerful, reusable test workflows.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -31,6 +31,17 @@ variables:
   variable_name:
     type: string
     value: "variable value"
+
+# Hooks to run before and after test execution
+before_all:
+  - "path/to/setup.test.yaml"
+after_all:
+  - "path/to/cleanup.test.yaml"
+before_each:
+  - "path/to/auth.test.yaml"
+after_each:
+  - "path/to/logging.test.yaml"
+
 suites:
   # Test suites
   - name: "Suite Name"
@@ -51,6 +62,11 @@ suites:
             # Assertions to validate the response
             status: 200
             # Other assertions...
+          export:
+            # Export values from the response for use in subsequent tests
+            body:
+              - path: "$.token"
+                as: "auth_token"
 ```
 
 ## File Formats
@@ -68,6 +84,36 @@ HttpProbe supports test definitions in two formats:
 name: "User API Tests"
 description: "Tests for the user management API endpoints"
 ```
+
+### Hooks
+
+Hooks allow you to run other test definitions at specific points in the test lifecycle:
+
+```yaml
+# Run before any test suites in this definition
+before_all:
+  - "setup/initialize.test.yaml"
+
+# Run after all test suites in this definition have completed
+after_all:
+  - "cleanup/teardown.test.yaml"
+
+# Run before each test suite in this definition
+before_each:
+  - "common/auth.test.yaml"
+
+# Run after each test suite in this definition
+after_each:
+  - "common/logging.test.yaml"
+```
+
+Hooks are useful for:
+- Setting up test data before tests run
+- Cleaning up resources after tests complete
+- Obtaining authentication tokens before each test suite
+- Logging test results after each test suite
+
+Variables exported by hooks are available to subsequent tests. For example, if a `before_each` hook exports an authentication token, that token is available in the test suite that follows.
 
 The `name` is used in test reports and logs to identify the test definition. The `description` provides additional information about the purpose of the tests.
 
@@ -97,12 +143,27 @@ Test suites group related test cases together.
 ```yaml
 suites:
   - name: "User Management"
+    config:
+      concurrent: true  # Run test cases in this suite concurrently
     cases:
       # Test cases for user management
   - name: "Authentication"
     cases:
       # Test cases for authentication
 ```
+
+#### Suite Configuration
+
+The optional `config` section allows you to configure suite-specific behavior:
+
+```yaml
+config:
+  concurrent: true  # Run test cases in this suite concurrently
+```
+
+Available configuration options:
+
+- `concurrent`: When set to `true`, test cases in the suite will run concurrently instead of sequentially. This can significantly improve performance when test cases are independent, but should be used carefully if test cases depend on each other or export variables that other test cases need. See the [Concurrency](concurrency) documentation for more details.
 
 ## Test Cases
 
