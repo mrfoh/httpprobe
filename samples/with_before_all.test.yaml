@@ -1,0 +1,30 @@
+name: "Before all hook example"
+description: "Demonstrates the use of before_all hook"
+variables:
+  base_url:
+    value: "https://core.staging.fleetcontrols.io/v1"
+    type: string
+before_all:
+  - samples/hooks/login.test.yaml
+suites:
+  - name: "After hook suite"
+    cases:
+      - title: "/get"
+        request:
+          method: GET
+          url: "${base_url}/accounts/me"
+          headers:
+            - key: Accept
+              value: application/json
+            - key: Authorization
+              value: "Bearer ${access_token}"
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200  # Simple status assertion
+            body:
+              $.status: "success"
+              $.account.roles[0].name: "Organization Admin"
+      
+      

@@ -1,0 +1,58 @@
+name: "Variable Scoping Example"
+description: "Demonstrates the variable scoping between test definition and suites"
+variables:
+  common_var:
+    type: string
+    value: "definition-level-value"
+  shared_var:
+    type: string
+    value: "defined-at-definition-level"
+
+suites:
+  - name: "Suite With Variables"
+    variables:
+      suite_var:
+        type: string
+        value: "suite-level-value"
+      shared_var:
+        type: string
+        value: "overridden-at-suite-level"
+    cases:
+      - title: "Using variables from different scopes"
+        request:
+          method: GET
+          url: "https://httpbin.org/get?common=${common_var}&suite=${suite_var}&shared=${shared_var}"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              "$.args.common": "definition-level-value"
+              "$.args.suite": "suite-level-value"
+              "$.args.shared": "overridden-at-suite-level"
+          export:
+            body:
+              - path: $.url
+                as: exported_url
+                
+  - name: "Second Suite Using Variables"
+    cases:
+      - title: "Testing variable visibility across suites"
+        request:
+          method: GET
+          url: "https://httpbin.org/get?common=${common_var}&shared=${shared_var}"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              "$.args.common": "definition-level-value"
+              "$.args.shared": "defined-at-definition-level"
