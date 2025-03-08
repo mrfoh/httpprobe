@@ -144,3 +144,4 @@ func TestInterpolateRequest(t *testing.T) {
 		t.Errorf("Body is not a string: %v", request.Body.Data)
 	}
 }
+
