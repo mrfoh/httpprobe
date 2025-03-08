@@ -1,16 +1,15 @@
 package tests
 
 import (
+	"testing"
+
 	"github.com/mrfoh/httpprobe/internal/logging"
 	"github.com/mrfoh/httpprobe/pkg/easyreq"
-	"testing"
 )
 
 func TestProcessBodyExports(t *testing.T) {
 	// Create a test logger
-	logger, _ := logging.NewLogger(&logging.LoggerOptions{
-		LogLevel: "info",
-	})
+	logger := logging.NewMockLogger()
 
 	// Create a mock response body
 	responseBody := `{
