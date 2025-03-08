@@ -1,0 +1,86 @@
+name: "Variable Namespace Example"
+description: "Demonstrates variable scoping and namespace isolation"
+variables:
+  base_url:
+    type: string
+    value: "https://httpbin.org"
+  common_var:
+    type: string
+    value: "global-value"
+  overridden_var:
+    type: string
+    value: "global-version"
+
+suites:
+  - name: "First Suite with Variables"
+    variables:
+      suite_var:
+        type: string
+        value: "first-suite-value"
+      overridden_var:
+        type: string
+        value: "first-suite-version"
+    cases:
+      - title: "First Suite Variables Test"
+        request:
+          method: GET
+          url: "${base_url}/get?common=${common_var}&suite=${suite_var}&overridden=${overridden_var}"
+          headers:
+            - key: Accept
+              value: application/json
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              "$.args.common": "global-value"
+              "$.args.suite": "first-suite-value"
+              "$.args.overridden": "first-suite-version"
+          export:
+            body:
+              - path: "$.url"
+                as: "first_request_url"
+
+      - title: "Using Exported Variables"
+        request:
+          method: GET
+          url: "${base_url}/get?previous_url=${first_request_url}"
+          headers:
+            - key: Accept
+              value: application/json
+          assertions:
+            status: 200
+          
+  - name: "Second Suite with Variables"
+    variables:
+      suite_var:
+        type: string
+        value: "second-suite-value"
+      overridden_var:
+        type: string
+        value: "second-suite-version"
+    cases:
+      - title: "Second Suite Variables Test"
+        request:
+          method: GET
+          url: "${base_url}/get?common=${common_var}&suite=${suite_var}&overridden=${overridden_var}"
+          headers:
+            - key: Accept
+              value: application/json
+          assertions:
+            status: 200
+            body:
+              "$.args.common": "global-value"
+              "$.args.suite": "second-suite-value"
+              "$.args.overridden": "second-suite-version"
+              
+      - title: "Exported Variables Not Available Across Suites"
+        request:
+          method: GET
+          url: "${base_url}/get?exported_var=not_available"
+          headers:
+            - key: Accept
+              value: application/json
+          assertions:
+            status: 200
