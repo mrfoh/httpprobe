@@ -18,6 +18,16 @@ A powerful HTTP API testing tool for defining, running, and validating API tests
 
 ## Installation
 
+### Using the Install Script (Linux, macOS, WSL)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/mrfoh/httpprobe/main/install.sh | bash
+```
+
+### From Binary Releases
+
+Download the prebuilt binary for your platform from the [releases page](https://github.com/mrfoh/httpprobe/releases).
+
 ### From Source
 
 ```bash
