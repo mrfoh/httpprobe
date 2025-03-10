@@ -7,3 +7,4 @@ bin
 logs
 test-results.json
 .env
+dist/

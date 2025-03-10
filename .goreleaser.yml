@@ -1,0 +1,66 @@
+project_name: httpprobe
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/main.go
+    binary: httpprobe
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+    ignore:
+      - goos: darwin
+        goarch: "386"
+    ldflags:
+      - -s -w -X github.com/mrfoh/httpprobe/cmd/httpprobe.version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}-v{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    replacements:
+      darwin: macos
+    format_overrides:
+      - goos: windows
+        format: tar.gz
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+# Scoop bucket integration
+scoop:
+  bucket:
+    owner: mrfoh
+    name: httpprobe
+    branch: main
+    token: "{{ .Env.GITHUB_TOKEN }}"
+  commit_author:
+    name: GitHub Actions Bot
+    email: github-actions[bot]@users.noreply.github.com
+  commit_msg_template: "chore: update scoop manifest for {{ .Tag }} [skip ci]"
+  homepage: https://github.com/mrfoh/httpprobe
+  description: A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON
+  license: MIT

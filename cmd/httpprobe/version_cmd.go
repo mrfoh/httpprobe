@@ -6,9 +6,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	VERSION = "1.0.4"
-)
+// Version is set during build using -ldflags
+var version = "dev"
+
+// VERSION is exported for backward compatibility
+var VERSION = version
 
 func NewVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
