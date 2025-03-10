@@ -27,11 +27,11 @@ curl -sSL https://raw.githubusercontent.com/mrfoh/httpprobe/main/install.sh | ba
 ### Windows (Scoop)
 
 ```powershell
-# Add the httpprobe bucket
-scoop bucket add httpprobe https://github.com/mrfoh/httpprobe
+# Add the bucket
+scoop bucket add mrfoh https://github.com/mrfoh/scoopbucket
 
 # Install httpprobe
-scoop install httpprobe/httpprobe
+scoop install mrfoh/httpprobe
 ```
 
 ### From Binary Releases
