@@ -102,6 +102,27 @@ See docs [here](https://mrfoh.github.io/httpprobe/)
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Release Process
+
+This project uses [GoReleaser](https://goreleaser.com/) for building and publishing releases:
+
+1. Make sure all your changes are committed and pushed
+2. Tag the release: `git tag -a v1.2.3 -m "Release v1.2.3"`
+3. Push the tag: `git push origin v1.2.3`
+4. The GitHub Actions workflow will automatically build binaries and publish the release
+
+#### Testing Releases Locally
+
+To test the release process locally without publishing:
+
+```bash
+# Install GoReleaser
+go install github.com/goreleaser/goreleaser@latest
+
+# Test the release process (no publishing)
+goreleaser release --snapshot --clean --config .goreleaser.local.yml
+```
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
