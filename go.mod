@@ -20,6 +20,7 @@ require (
 
 require (
 	github.com/alitto/pond/v2 v2.2.0
+	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/pkg/errors v0.9.1
