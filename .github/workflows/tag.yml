@@ -1,9 +1,12 @@
-name: Tag
+name: Release
 
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+  create:
+    tags:
+      - 'v*'
 
 env:
   BINARY_NAME: "httpprobe"
@@ -150,26 +153,30 @@ jobs:
       - name: Get release version
         id: get_version
         run: |
-          # Remove 'v' prefix if present
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
+          # Extract tag name from ref
+          TAG_NAME="${{ github.ref_name }}"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          
+          # Remove 'v' prefix if present for version number
+          VERSION="${TAG_NAME#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          echo "Tag: $TAG_NAME, Version: $VERSION"
 
       - name: Download release assets to compute hashes
         run: |
           VERSION=${{ steps.get_version.outputs.version }}
+          TAG_NAME=${{ steps.get_version.outputs.tag_name }}
           mkdir -p tmp
           
           # Download assets
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_amd64.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_amd64.tar.gz
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_386.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_386.tar.gz
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_arm64.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_arm64.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${TAG_NAME}/httpprobe-${TAG_NAME}_windows_amd64.tar.gz" -o tmp/httpprobe-${TAG_NAME}_windows_amd64.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${TAG_NAME}/httpprobe-${TAG_NAME}_windows_386.tar.gz" -o tmp/httpprobe-${TAG_NAME}_windows_386.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${TAG_NAME}/httpprobe-${TAG_NAME}_windows_arm64.tar.gz" -o tmp/httpprobe-${TAG_NAME}_windows_arm64.tar.gz
           
           # Compute SHA256 hashes
-          AMD64_HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_amd64.tar.gz | cut -d ' ' -f 1)
-          I386_HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_386.tar.gz | cut -d ' ' -f 1)
-          ARM64_HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_arm64.tar.gz | cut -d ' ' -f 1)
+          AMD64_HASH=$(sha256sum tmp/httpprobe-${TAG_NAME}_windows_amd64.tar.gz | cut -d ' ' -f 1)
+          I386_HASH=$(sha256sum tmp/httpprobe-${TAG_NAME}_windows_386.tar.gz | cut -d ' ' -f 1)
+          ARM64_HASH=$(sha256sum tmp/httpprobe-${TAG_NAME}_windows_arm64.tar.gz | cut -d ' ' -f 1)
           
           # Store hashes for later use
           echo "amd64_hash=$AMD64_HASH" >> $GITHUB_OUTPUT
