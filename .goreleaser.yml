@@ -25,11 +25,12 @@ builds:
       - -s -w -X github.com/mrfoh/httpprobe/cmd/httpprobe.version={{.Version}}
 
 archives:
-  - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}-v{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    replacements:
-      darwin: macos
+  - id: default
+    name_template: "{{ .ProjectName }}-v{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    files:
+      - LICENSE*
+      - README*
     format_overrides:
       - goos: windows
         format: tar.gz
@@ -38,7 +39,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -52,17 +53,39 @@ changelog:
       - Merge branch
 
 # Scoop bucket integration
-scoop:
-  bucket:
-    owner: mrfoh
-    name: scoopbucket
-    branch: main
-    token: "{{ .Env.GITHUB_TOKEN }}"
-  commit_author:
-    name: GitHub Actions Bot
-    email: github-actions[bot]@users.noreply.github.com
-  commit_msg_template: "chore: update httpprobe manifest to {{ .Tag }} [skip ci]"
-  homepage: https://github.com/mrfoh/httpprobe
-  description: A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON
-  license: MIT
-  folder: bucket
+scoops:
+  - name: httpprobe
+    description: "A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON"
+    homepage: "https://github.com/mrfoh/httpprobe"
+    license: "MIT"
+    repository:
+      owner: mrfoh
+      name: scoopbucket
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    commit_author:
+      name: GitHub Actions Bot
+      email: github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "chore: update httpprobe manifest to {{ .Tag }} [skip ci]"
+    directory: bucket
+
+# Homebrew tap integration
+brews:
+  - name: httpprobe
+    description: "A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON"
+    homepage: "https://github.com/mrfoh/httpprobe"
+    license: "MIT"
+    repository:
+      owner: mrfoh
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    commit_author:
+      name: GitHub Actions Bot
+      email: github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "chore: update httpprobe formula to {{ .Tag }} [skip ci]"
+    directory: Formula
+    install: |
+      bin.install "httpprobe"
+    test: |
+      system "#{bin}/httpprobe", "version"
