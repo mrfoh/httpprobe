@@ -167,15 +167,15 @@ jobs:
         run: |
           for arch in amd64 386 arm64; do
             HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_$arch.tar.gz | awk '{print $1}')
-            echo "${arch}_hash=$HASH" >> $GITHUB_ENV
+            echo "arch_${arch}_hash=$HASH" >> $GITHUB_ENV
           done
 
       - name: Update Scoop manifest
         run: |
           jq --arg version "${{ env.version }}" \
-             --arg amd64 "${{ env.amd64_hash }}" \
-             --arg i386 "${{ env.386_hash }}" \
-             --arg arm64 "${{ env.arm64_hash }}" \
+             --arg amd64 "${{ env.arch_amd64_hash }}" \
+             --arg i386 "${{ env.arch_386_hash }}" \
+             --arg arm64 "${{ env.arch_arm64_hash }}" \
           '
           .version = $version |
           .architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + $version + "/httpprobe-v" + $version + "_windows_amd64.tar.gz" |
