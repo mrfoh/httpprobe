@@ -3,10 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
-  create:
-    tags:
-      - 'v*'
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 env:
   BINARY_NAME: "httpprobe"
