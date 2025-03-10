@@ -137,3 +137,89 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: ${{ steps.release_body.outputs.body }}
           files: artifacts/**/*.tar.gz
+      
+  update-scoop:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get release version
+        id: get_version
+        run: |
+          # Remove 'v' prefix if present
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Download release assets to compute hashes
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          mkdir -p tmp
+          
+          # Download assets
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_amd64.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_amd64.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_386.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_386.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_arm64.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_arm64.tar.gz
+          
+          # Compute SHA256 hashes
+          AMD64_HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_amd64.tar.gz | cut -d ' ' -f 1)
+          I386_HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_386.tar.gz | cut -d ' ' -f 1)
+          ARM64_HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_arm64.tar.gz | cut -d ' ' -f 1)
+          
+          # Store hashes for later use
+          echo "amd64_hash=$AMD64_HASH" >> $GITHUB_OUTPUT
+          echo "i386_hash=$I386_HASH" >> $GITHUB_OUTPUT
+          echo "arm64_hash=$ARM64_HASH" >> $GITHUB_OUTPUT
+        id: compute_hashes
+
+      - name: Update scoop manifest
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          
+          # Update version in manifest
+          jq '.version = env.VERSION' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          # Update URLs in manifest
+          jq '.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_amd64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          jq '.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_386.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          jq '.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_arm64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          # Update hashes in manifest
+          jq --arg hash "${{ steps.compute_hashes.outputs.amd64_hash }}" '.architecture."64bit".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          jq --arg hash "${{ steps.compute_hashes.outputs.i386_hash }}" '.architecture."32bit".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          jq --arg hash "${{ steps.compute_hashes.outputs.arm64_hash }}" '.architecture."arm64".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          # Update autoupdate URLs
+          jq '.autoupdate.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_amd64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          jq '.autoupdate.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_386.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          
+          jq '.autoupdate.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_arm64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+
+      - name: Commit and push updated manifest
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add bucket/httpprobe.json
+          git commit -m "chore: update scoop manifest for ${{ github.ref_name }}"
+          git push
