@@ -1,19 +1,19 @@
 {
-  "version": null,
+  "version": "1.0.1",
   "description": "A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON",
   "homepage": "https://github.com/mrfoh/httpprobe",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/mrfoh/httpprobe/releases/download/v/httpprobe-v_windows_amd64.tar.gz",
+      "url": "https://github.com/mrfoh/httpprobe/releases/download/v1.0.1/httpprobe-v1.0.1_windows_amd64.tar.gz",
       "hash": "05a3143ea0c111929a234aaf269cf885fb9231c7c25a0b5193ce606c4f763797"
     },
     "32bit": {
-      "url": "https://github.com/mrfoh/httpprobe/releases/download/v/httpprobe-v_windows_386.tar.gz",
+      "url": "https://github.com/mrfoh/httpprobe/releases/download/v1.0.1/httpprobe-v1.0.1_windows_386.tar.gz",
       "hash": "c8a4daca62495ccaf50f2a829eb27863c1324edf5819c5b810d88374a0eb1c56"
     },
     "arm64": {
-      "url": "https://github.com/mrfoh/httpprobe/releases/download/v/httpprobe-v_windows_arm64.tar.gz",
+      "url": "https://github.com/mrfoh/httpprobe/releases/download/v1.0.1/httpprobe-v1.0.1_windows_arm64.tar.gz",
       "hash": "829774a71b6992d1f8f89b7d2b62392ea223e0819872f22903eecca82d2cd601"
     }
   },
