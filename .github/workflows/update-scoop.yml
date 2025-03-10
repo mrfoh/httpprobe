@@ -26,23 +26,23 @@ jobs:
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
           
           # Update URLs in manifest
-          jq '.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe_Windows_x86_64.zip"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          jq '.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_amd64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
           
-          jq '.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe_Windows_i386.zip"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          jq '.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_386.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
           
-          jq '.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe_Windows_arm64.zip"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          jq '.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_arm64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
           
           # Update autoupdate URLs
-          jq '.autoupdate.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe_Windows_x86_64.zip"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          jq '.autoupdate.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_amd64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
           
-          jq '.autoupdate.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe_Windows_i386.zip"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          jq '.autoupdate.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_386.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
           
-          jq '.autoupdate.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe_Windows_arm64.zip"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
+          jq '.autoupdate.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_arm64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
           mv bucket/httpprobe.json.tmp bucket/httpprobe.json
 
       - name: Download release assets to compute hashes
@@ -51,14 +51,14 @@ jobs:
           mkdir -p tmp
           
           # Download assets
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/v${VERSION}/httpprobe_Windows_x86_64.zip" -o tmp/httpprobe_Windows_x86_64.zip
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/v${VERSION}/httpprobe_Windows_i386.zip" -o tmp/httpprobe_Windows_i386.zip
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/v${VERSION}/httpprobe_Windows_arm64.zip" -o tmp/httpprobe_Windows_arm64.zip
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/v${VERSION}/httpprobe-v${VERSION}_windows_amd64.tar.gz" -o tmp/httpprobe-v${VERSION}_windows_amd64.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/v${VERSION}/httpprobe-v${VERSION}_windows_386.tar.gz" -o tmp/httpprobe-v${VERSION}_windows_386.tar.gz
+          curl -L "https://github.com/mrfoh/httpprobe/releases/download/v${VERSION}/httpprobe-v${VERSION}_windows_arm64.tar.gz" -o tmp/httpprobe-v${VERSION}_windows_arm64.tar.gz
           
           # Compute SHA256 hashes
-          AMD64_HASH=$(sha256sum tmp/httpprobe_Windows_x86_64.zip | cut -d ' ' -f 1)
-          I386_HASH=$(sha256sum tmp/httpprobe_Windows_i386.zip | cut -d ' ' -f 1)
-          ARM64_HASH=$(sha256sum tmp/httpprobe_Windows_arm64.zip | cut -d ' ' -f 1)
+          AMD64_HASH=$(sha256sum tmp/httpprobe-v${VERSION}_windows_amd64.tar.gz | cut -d ' ' -f 1)
+          I386_HASH=$(sha256sum tmp/httpprobe-v${VERSION}_windows_386.tar.gz | cut -d ' ' -f 1)
+          ARM64_HASH=$(sha256sum tmp/httpprobe-v${VERSION}_windows_arm64.tar.gz | cut -d ' ' -f 1)
           
           # Update hashes in manifest
           jq --arg hash "$AMD64_HASH" '.architecture."64bit".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
