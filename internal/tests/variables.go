@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Define a global random source
@@ -124,6 +126,10 @@ func InterpolateVariables(input string, variables map[string]Variable) (string, 
 			return processRandomFunction(args)
 		case "timestamp":
 			return processTimestampFunction(args)
+		case "now":
+			return processNowFunction()
+		case "uuid":
+			return processUUIDFunction()
 		default:
 			return match // Unknown function, no change
 		}
@@ -248,4 +254,15 @@ func processTimestampFunction(args []string) string {
 	}
 
 	return time.Now().Format(format)
+}
+
+// processNowFunction returns the current unix timestamp in milliseconds
+func processNowFunction() string {
+	return strconv.FormatInt(time.Now().UnixMilli(), 10)
+}
+
+// processUUIDFunction generates a random UUID
+func processUUIDFunction() string {
+	value := uuid.Must(uuid.NewRandom())
+	return value.String()
 }
