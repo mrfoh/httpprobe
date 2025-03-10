@@ -325,7 +325,7 @@ variables:
     value: "${uuid()}"  # Generate a UUID
   timestamp:
     type: string
-    value: "${now()}"  # Current timestamp
+    value: "${now()}"  # Current timestamp in milliseconds
 suites:
   - name: "Logging API"
     cases:

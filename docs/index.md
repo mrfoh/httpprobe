@@ -112,7 +112,7 @@ suites:
 2. Run your test:
 
 ```bash
-httpprobe run simple.test.yaml
+httpprobe run
 ```
 
 ## Example Test Output

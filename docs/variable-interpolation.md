@@ -110,6 +110,28 @@ variables:
     value: "${timestamp(2006-01-02)}"  # Format: YYYY-MM-DD
 ```
 
+### Unix Timestamp Generation
+
+Generate the current unix timestamp in milliseconds:
+
+```yaml
+variables:
+  created_at:
+    type: string
+    value: "${now()}"
+```
+
+### UUID
+
+Generate V4 UUID:
+
+```yaml
+variables:
+  order_id:
+    type: string
+    value: "${uuid()}"
+```
+
 The format uses Go's time formatting syntax.
 
 ## Exporting Response Values as Variables

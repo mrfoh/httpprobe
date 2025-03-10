@@ -2,7 +2,7 @@
 layout: default
 title: Command Line Usage
 nav_order: 5
-description: "Learn how to use the HttpProbe command line interface."
+description: Learn how to use the HttpProbe command line interface
 ---
 
 # Command Line Usage
