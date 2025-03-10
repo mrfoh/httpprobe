@@ -24,6 +24,16 @@ A powerful HTTP API testing tool for defining, running, and validating API tests
 curl -sSL https://raw.githubusercontent.com/mrfoh/httpprobe/main/install.sh | bash
 ```
 
+### Windows (Scoop)
+
+```powershell
+# Add the httpprobe bucket
+scoop bucket add httpprobe https://github.com/mrfoh/httpprobe
+
+# Install httpprobe
+scoop install httpprobe/httpprobe
+```
+
 ### From Binary Releases
 
 Download the prebuilt binary for your platform from the [releases page](https://github.com/mrfoh/httpprobe/releases).
