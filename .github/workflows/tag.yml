@@ -149,6 +149,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GH_PERSONAL_TOKEN }}
 
       - name: Get release version
         id: get_version
@@ -228,5 +232,11 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git add bucket/httpprobe.json
-          git commit -m "chore: update scoop manifest for ${{ github.ref_name }}"
-          git push
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update scoop manifest for ${{ github.ref_name }}"
+            git push origin main
+          fi
