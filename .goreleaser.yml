@@ -77,7 +77,7 @@ brews:
     license: "MIT"
     repository:
       owner: mrfoh
-      name: homebrew-tap
+      name: homebrewtap
       branch: main
       token: "{{ .Env.GITHUB_TOKEN }}"
     commit_author:
