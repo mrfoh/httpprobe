@@ -1,35 +1,35 @@
 {
-    "version": "0.1.0",
-    "description": "A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON",
-    "homepage": "https://github.com/mrfoh/httpprobe",
-    "license": "MIT",
-    "architecture": {
-        "64bit": {
-            "url": "https://github.com/mrfoh/httpprobe/releases/download/v0.1.0/httpprobe-v0.1.0_windows_amd64.tar.gz",
-            "hash": ""
-        },
-        "32bit": {
-            "url": "https://github.com/mrfoh/httpprobe/releases/download/v0.1.0/httpprobe-v0.1.0_windows_386.tar.gz",
-            "hash": ""
-        },
-        "arm64": {
-            "url": "https://github.com/mrfoh/httpprobe/releases/download/v0.1.0/httpprobe-v0.1.0_windows_arm64.tar.gz",
-            "hash": ""
-        }
+  "version": "v1.0.0",
+  "description": "A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON",
+  "homepage": "https://github.com/mrfoh/httpprobe",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/mrfoh/httpprobe/releases/download/v1.0.0/httpprobe-v1.0.0_windows_amd64.tar.gz",
+      "hash": ""
     },
-    "bin": "httpprobe.exe",
-    "checkver": "github",
-    "autoupdate": {
-        "architecture": {
-            "64bit": {
-                "url": "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_amd64.tar.gz"
-            },
-            "32bit": {
-                "url": "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_386.tar.gz"
-            },
-            "arm64": {
-                "url": "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_arm64.tar.gz"
-            }
-        }
+    "32bit": {
+      "url": "https://github.com/mrfoh/httpprobe/releases/download/v1.0.0/httpprobe-v1.0.0_windows_386.tar.gz",
+      "hash": ""
+    },
+    "arm64": {
+      "url": "https://github.com/mrfoh/httpprobe/releases/download/v1.0.0/httpprobe-v1.0.0_windows_arm64.tar.gz",
+      "hash": ""
     }
+  },
+  "bin": "httpprobe.exe",
+  "checkver": "github",
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/mrfoh/httpprobe/releases/download/$version/httpprobe-$version_windows_amd64.tar.gz"
+      },
+      "32bit": {
+        "url": "https://github.com/mrfoh/httpprobe/releases/download/$version/httpprobe-$version_windows_386.tar.gz"
+      },
+      "arm64": {
+        "url": "https://github.com/mrfoh/httpprobe/releases/download/$version/httpprobe-$version_windows_arm64.tar.gz"
+      }
+    }
+  }
 }
