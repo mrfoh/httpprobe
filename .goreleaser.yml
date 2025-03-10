@@ -54,13 +54,14 @@ changelog:
 scoop:
   bucket:
     owner: mrfoh
-    name: httpprobe
+    name: scoopbucket
     branch: main
     token: "{{ .Env.GITHUB_TOKEN }}"
   commit_author:
     name: GitHub Actions Bot
     email: github-actions[bot]@users.noreply.github.com
-  commit_msg_template: "chore: update scoop manifest for {{ .Tag }} [skip ci]"
+  commit_msg_template: "chore: update httpprobe manifest to {{ .Tag }} [skip ci]"
   homepage: https://github.com/mrfoh/httpprobe
   description: A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON
   license: MIT
+  folder: bucket

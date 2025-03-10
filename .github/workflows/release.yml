@@ -50,4 +50,5 @@ jobs:
           version: latest
           args: release --clean
         env:
+          # This is used for pushing to the scoop bucket repo
           GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
