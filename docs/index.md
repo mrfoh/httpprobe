@@ -31,13 +31,56 @@ HttpProbe makes API testing simple and powerful by allowing you to define tests 
 
 ### Installation
 
+#### Linux & macOS
+
+Use the install script to automatically download and install the appropriate version:
+
 ```bash
-# From source
+curl -sSL https://raw.githubusercontent.com/mrfoh/httpprobe/main/install.sh | bash
+```
+
+#### Windows
+
+**Using Scoop**
+
+```powershell
+# Add the httpprobe bucket
+scoop bucket add httpprobe https://github.com/mrfoh/httpprobe
+
+# Install httpprobe
+scoop install httpprobe/httpprobe
+```
+
+#### From Binary Releases
+
+Download the prebuilt binary for your platform from the [releases page](https://github.com/mrfoh/httpprobe/releases).
+
+1. Choose the appropriate archive for your platform:
+   - Linux: `httpprobe-v{version}_linux_{arch}.tar.gz`
+   - macOS: `httpprobe-v{version}_darwin_{arch}.tar.gz`
+   - Windows: `httpprobe-v{version}_windows_{arch}.tar.gz`
+
+2. Extract the archive and place the binary in your PATH.
+
+#### From Source
+
+```bash
+# Clone the repository
 git clone https://github.com/mrfoh/httpprobe.git
 cd httpprobe
+
+# Build the binary
 go build -o httpprobe ./cmd/main.go
 
-# Using Go Install
+# Move the binary to somewhere in your PATH (Linux/macOS)
+sudo mv httpprobe /usr/local/bin/
+```
+
+#### Using Go Install
+
+If you have Go installed, you can install directly:
+
+```bash
 go install github.com/mrfoh/httpprobe@latest
 ```
 
