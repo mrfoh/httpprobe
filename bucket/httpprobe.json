@@ -17,11 +17,7 @@
       "hash": "5ad656df582426c96b3685875bff32aab14e5f6c58f66141cb302d2565ecbf17"
     }
   },
-  "extract_dir": "",
   "bin": "httpprobe.exe",
-  "pre_install": [
-    "Rename-Item \"$dir\\httpprobe-v1.0.1_windows_$($architecture)\" \"$dir\\httpprobe.exe\""
-  ],
   "checkver": "github",
   "autoupdate": {
     "architecture": {
@@ -34,9 +30,6 @@
       "arm64": {
         "url": "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_arm64.tar.gz"
       }
-    },
-    "pre_install": [
-      "Rename-Item \"$dir\\httpprobe-v$version_windows_$($architecture)\" \"$dir\\httpprobe.exe\""
-    ]
+    }
   }
 }

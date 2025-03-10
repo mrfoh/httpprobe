@@ -88,14 +88,18 @@ jobs:
           if [[ "${{ matrix.platform }}" == "windows" ]]; then
             BINARY_PATH="bin/${{ env.BINARY_NAME }}.exe"
             mv bin/${{ env.BINARY_NAME }} bin/${{ env.BINARY_NAME }}.exe
+            ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
+            mkdir -p dist/tmp
+            cp $BINARY_PATH dist/tmp/${{ env.BINARY_NAME }}.exe
+            cd dist && tar -czf $ARTIFACT_NAME.tar.gz -C tmp .
           else
             BINARY_PATH="bin/${{ env.BINARY_NAME }}"
+            ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
+            mkdir -p dist/tmp
+            cp $BINARY_PATH dist/tmp/${{ env.BINARY_NAME }}
+            cd dist && tar -czf $ARTIFACT_NAME.tar.gz -C tmp .
           fi
           
-          ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
-          
-          cp $BINARY_PATH dist/$ARTIFACT_NAME
-          cd dist && tar -czf $ARTIFACT_NAME.tar.gz $ARTIFACT_NAME
           echo "ARTIFACT_PATH=dist/$ARTIFACT_NAME.tar.gz" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
         shell: bash
