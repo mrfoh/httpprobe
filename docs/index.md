@@ -31,7 +31,7 @@ HttpProbe makes API testing simple and powerful by allowing you to define tests 
 
 ### Installation
 
-#### Linux & macOS
+#### Linux & macOS (Install Script)
 
 Use the install script to automatically download and install the appropriate version:
 
@@ -39,9 +39,24 @@ Use the install script to automatically download and install the appropriate ver
 curl -sSL https://raw.githubusercontent.com/mrfoh/httpprobe/main/install.sh | bash
 ```
 
-#### Windows
+#### macOS (Homebrew)
 
-**Using Scoop**
+```bash
+# Add the tap
+brew tap mrfoh/tap
+
+# Install httpprobe
+brew install httpprobe
+```
+
+#### Linux (Snap)
+
+```bash
+# Install httpprobe
+sudo snap install httpprobe
+```
+
+#### Windows (Scoop)
 
 ```powershell
 # Add the bucket

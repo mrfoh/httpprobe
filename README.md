@@ -24,6 +24,23 @@ A powerful HTTP API testing tool for defining, running, and validating API tests
 curl -sSL https://raw.githubusercontent.com/mrfoh/httpprobe/main/install.sh | bash
 ```
 
+### macOS (Homebrew)
+
+```bash
+# Add the tap
+brew tap mrfoh/tap
+
+# Install httpprobe
+brew install httpprobe
+```
+
+### Linux (Snap)
+
+```bash
+# Install httpprobe
+sudo snap install httpprobe
+```
+
 ### Windows (Scoop)
 
 ```powershell
