@@ -2,7 +2,7 @@
 layout: default
 title: Examples
 nav_order: 7
-description: "Practical examples of using HttpProbe for different API testing scenarios."
+description: Practical examples of using HttpProbe for different API testing scenarios
 ---
 
 # Examples
@@ -46,7 +46,7 @@ suites:
           assertions:
             status: 200
             body:
-              "$.status": "ok"
+              $.status: "ok"
 ```
 
 ### Simple POST Request
@@ -123,9 +123,13 @@ suites:
           assertions:
             status: 200
             body:
-              "$.success": true
-              "$.token": "contains eyJ"  # JWT tokens start with eyJ
-              "$.expiresIn": "> 0"
+              $.success: true
+              $.token: "contains eyJ"  # JWT tokens start with eyJ
+              $.expiresIn: "> 0"
+          export:
+            body:
+              - path: $.token
+                as: jwt_token
 ```
 
 ### OAuth2 Authentication
@@ -154,19 +158,19 @@ suites:
             - key: Content-Type
               value: application/x-www-form-urlencoded
           body:
-            type: json
+            type: form
             data: |
-              {
-                "grant_type": "client_credentials",
-                "client_id": "${client_id}",
-                "client_secret": "${client_secret}"
-              }
+              grant_type=client_credentials&client_id=${client_id}&client_secret=${client_secret}
           assertions:
             status: 200
             body:
-              "$.access_token": "contains "
-              "$.token_type": "Bearer"
-              "$.expires_in": "> 0"
+              $.access_token: "length > 0"
+              $.token_type: "Bearer"
+              $.expires_in: "> 0"
+        export:
+          body:
+            - path: $.access_token
+              as: oauth_token
 ```
 
 ## CRUD API Tests
@@ -207,14 +211,18 @@ suites:
           assertions:
             status: 201
             body:
-              "$.success": true
-              "$.product.id": "length > 0"  # Check that ID was generated
-              "$.product.name": "Test Product"
+              $.success: true
+              $.product.id: "length > 0"  # Check that ID was generated
+              $.product.name: "Test Product"
+        export:
+          body:
+            - path: $.product.id
+              as: product_id
               
       - title: "Get Product"
         request:
           method: GET
-          url: "${base_url}/products/{{product_id}}"  # This would come from the previous test
+          url: "${base_url}/products/${product_id}"  # Using the exported product_id
           headers:
             - key: Authorization
               value: Bearer ${auth_token}
@@ -224,15 +232,15 @@ suites:
           assertions:
             status: 200
             body:
-              "$.name": "Test Product"
-              "$.price": 99.99
-              "$.category": "Electronics"
-              "$.inStock": true
+              $.name: "Test Product"
+              $.price: 99.99
+              $.category: "Electronics"
+              $.inStock: true
               
       - title: "Update Product"
         request:
           method: PUT
-          url: "${base_url}/products/{{product_id}}" 
+          url: "${base_url}/products/${product_id}" 
           headers:
             - key: Authorization
               value: Bearer ${auth_token}
@@ -248,15 +256,15 @@ suites:
           assertions:
             status: 200
             body:
-              "$.success": true
-              "$.product.name": "Updated Product"
-              "$.product.price": 149.99
-              "$.product.category": "Electronics"  # Unchanged field
+              $.success: true
+              $.product.name: "Updated Product"
+              $.product.price: 149.99
+              $.product.category: "Electronics"  # Unchanged field
               
       - title: "Delete Product"
         request:
           method: DELETE
-          url: "${base_url}/products/{{product_id}}"
+          url: "${base_url}/products/${product_id}"
           headers:
             - key: Authorization
               value: Bearer ${auth_token}
@@ -266,8 +274,8 @@ suites:
           assertions:
             status: 200
             body:
-              "$.success": true
-              "$.message": "contains deleted"
+              $.success: true
+              $.message: "contains deleted"
 ```
 
 ## Advanced Features
@@ -314,10 +322,10 @@ variables:
     value: "https://api.example.com"
   request_id:
     type: string
-    value: "${random(16)}"  # 16-character random string
+    value: "${uuid()}"  # Generate a UUID
   timestamp:
     type: string
-    value: "${timestamp(2006-01-02T15:04:05Z)}"  # Current ISO timestamp
+    value: "${now()}"  # Current timestamp
 suites:
   - name: "Logging API"
     cases:
@@ -347,6 +355,39 @@ suites:
               "$.success": true
 ```
 
+### Using Test Hooks
+
+```yaml
+name: "Test With Hooks Example"
+description: "Demonstrates how to use hooks for setup and data preparation"
+variables:
+  base_url:
+    type: string
+    value: "https://api.example.com"
+# Reference another test file that will be executed before this one
+# Typically used for authentication or setup
+before_all:
+  - auth/login.test.yaml
+suites:
+  - name: "Protected API"
+    cases:
+      - title: "Access Protected Resource"
+        request:
+          method: GET
+          url: "${base_url}/protected-resource"
+          headers:
+            - key: Authorization
+              value: Bearer ${access_token}  # Token from login.test.yaml
+          body:
+            type: json
+            data: null
+          assertions:
+            status: 200
+            body:
+              $.success: true
+              $.data: "length > 0"
+```
+
 ### Schema Validation
 
 ```yaml
@@ -371,40 +412,41 @@ suites:
             data: null
           assertions:
             status: 200
-            schema: |
-              {
-                "type": "object",
-                "required": ["id", "name", "email", "createdAt"],
-                "properties": {
-                  "id": { 
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "name": { 
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "email": { 
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "createdAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": ["admin", "user", "guest"]
-                  },
-                  "settings": {
-                    "type": "object",
-                    "properties": {
-                      "notifications": { "type": "boolean" },
-                      "theme": { "type": "string" }
+            body:
+              schema: |
+                {
+                  "type": "object",
+                  "required": ["id", "name", "email", "createdAt"],
+                  "properties": {
+                    "id": { 
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "name": { 
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "email": { 
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": ["admin", "user", "guest"]
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "notifications": { "type": "boolean" },
+                        "theme": { "type": "string" }
+                      }
                     }
                   }
                 }
-              }
 ```
 
 ## Integration Tests
@@ -529,8 +571,8 @@ suites:
           assertions:
             status: 200
             body:
-              "$.status": "paid"
-              "$.paymentDetails.transactionId": "{{transaction_id}}"
+              $.status: "paid"
+              $.paymentDetails.transactionId: "length > 0"
 ```
 
 These examples cover a wide range of API testing scenarios and showcase HttpProbe's features for creating comprehensive and maintainable test suites.
