@@ -3,10 +3,11 @@ name: Release
 on:
   push:
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*' # Trigger on versioned tags, e.g., v1.0, v20.15.10
 
 env:
   BINARY_NAME: "httpprobe"
+  GO_VERSION: "1.23.3"
 
 jobs:
   test:
@@ -18,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22.0'
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -60,7 +61,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23.3'
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -71,8 +72,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Set version
-        id: version
-        run: echo "VERSION=$(echo ${{ github.ref }} | cut -d '/' -f 3)" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Build
         env:
@@ -84,25 +84,22 @@ jobs:
           
       - name: Prepare artifact
         run: |
-          mkdir -p dist
+          ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
+          OUTPUT_PATH="dist/${ARTIFACT_NAME}"
+          mkdir -p $OUTPUT_PATH
+          
           if [[ "${{ matrix.platform }}" == "windows" ]]; then
-            BINARY_PATH="bin/${{ env.BINARY_NAME }}.exe"
             mv bin/${{ env.BINARY_NAME }} bin/${{ env.BINARY_NAME }}.exe
-            ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
-            mkdir -p dist/tmp
-            cp $BINARY_PATH dist/tmp/${{ env.BINARY_NAME }}.exe
-            cd dist && tar -czf $ARTIFACT_NAME.tar.gz -C tmp .
+            mv bin/${{ env.BINARY_NAME }}.exe $OUTPUT_PATH/${{ env.BINARY_NAME }}.exe
           else
-            BINARY_PATH="bin/${{ env.BINARY_NAME }}"
-            ARTIFACT_NAME="${{ env.BINARY_NAME }}-${{ env.VERSION }}_${{ matrix.platform }}_${{ matrix.arch }}"
-            mkdir -p dist/tmp
-            cp $BINARY_PATH dist/tmp/${{ env.BINARY_NAME }}
-            cd dist && tar -czf $ARTIFACT_NAME.tar.gz -C tmp .
+            mv bin/${{ env.BINARY_NAME }} $OUTPUT_PATH/${{ env.BINARY_NAME }}
           fi
           
+          # Archive the binary (without extra directories)
+          tar -czf dist/$ARTIFACT_NAME.tar.gz -C $OUTPUT_PATH .
+
           echo "ARTIFACT_PATH=dist/$ARTIFACT_NAME.tar.gz" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
-        shell: bash
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -127,21 +124,18 @@ jobs:
           path: artifacts
 
       - name: Generate Release Body
-        id: release_body
         run: |
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "Changelog:" >> $GITHUB_OUTPUT
-          git log $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~10)..HEAD --oneline >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "## Changelog" > release_body.md
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 2>/dev/null || echo $(git rev-list --max-parents=0 HEAD))..HEAD >> release_body.md
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.GH_PERSONAL_TOKEN }}
           name: Release ${{ github.ref_name }}
-          body: ${{ steps.release_body.outputs.body }}
+          body_path: release_body.md
           files: artifacts/**/*.tar.gz
-      
+
   update-scoop:
     needs: release
     runs-on: ubuntu-latest
@@ -156,88 +150,46 @@ jobs:
           token: ${{ secrets.GH_PERSONAL_TOKEN }}
 
       - name: Get release version
-        id: get_version
         run: |
-          # Extract tag name from ref
           TAG_NAME="${{ github.ref_name }}"
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          
-          # Remove 'v' prefix if present for version number
           VERSION="${TAG_NAME#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Tag: $TAG_NAME, Version: $VERSION"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_ENV
 
-      - name: Download release assets to compute hashes
+      - name: Download release assets
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
-          TAG_NAME=${{ steps.get_version.outputs.tag_name }}
           mkdir -p tmp
-          
-          # Download assets
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${TAG_NAME}/httpprobe-${TAG_NAME}_windows_amd64.tar.gz" -o tmp/httpprobe-${TAG_NAME}_windows_amd64.tar.gz
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${TAG_NAME}/httpprobe-${TAG_NAME}_windows_386.tar.gz" -o tmp/httpprobe-${TAG_NAME}_windows_386.tar.gz
-          curl -L "https://github.com/mrfoh/httpprobe/releases/download/${TAG_NAME}/httpprobe-${TAG_NAME}_windows_arm64.tar.gz" -o tmp/httpprobe-${TAG_NAME}_windows_arm64.tar.gz
-          
-          # Compute SHA256 hashes
-          AMD64_HASH=$(sha256sum tmp/httpprobe-${TAG_NAME}_windows_amd64.tar.gz | cut -d ' ' -f 1)
-          I386_HASH=$(sha256sum tmp/httpprobe-${TAG_NAME}_windows_386.tar.gz | cut -d ' ' -f 1)
-          ARM64_HASH=$(sha256sum tmp/httpprobe-${TAG_NAME}_windows_arm64.tar.gz | cut -d ' ' -f 1)
-          
-          # Store hashes for later use
-          echo "amd64_hash=$AMD64_HASH" >> $GITHUB_OUTPUT
-          echo "i386_hash=$I386_HASH" >> $GITHUB_OUTPUT
-          echo "arm64_hash=$ARM64_HASH" >> $GITHUB_OUTPUT
-        id: compute_hashes
+          for arch in amd64 386 arm64; do
+            curl -L "https://github.com/mrfoh/httpprobe/releases/download/${{ github.ref_name }}/httpprobe-${{ github.ref_name }}_windows_$arch.tar.gz" -o tmp/httpprobe-${{ github.ref_name }}_windows_$arch.tar.gz
+          done
 
-      - name: Update scoop manifest
+      - name: Compute SHA256 hashes
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
-          
-          # Update version in manifest
-          jq '.version = env.VERSION' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          # Update URLs in manifest
-          jq '.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_amd64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          jq '.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_386.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          jq '.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + env.VERSION + "/httpprobe-v" + env.VERSION + "_windows_arm64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          # Update hashes in manifest
-          jq --arg hash "${{ steps.compute_hashes.outputs.amd64_hash }}" '.architecture."64bit".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          jq --arg hash "${{ steps.compute_hashes.outputs.i386_hash }}" '.architecture."32bit".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          jq --arg hash "${{ steps.compute_hashes.outputs.arm64_hash }}" '.architecture."arm64".hash = $hash' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          # Update autoupdate URLs
-          jq '.autoupdate.architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_amd64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          jq '.autoupdate.architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_386.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
-          
-          jq '.autoupdate.architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v$version/httpprobe-v$version_windows_arm64.tar.gz"' bucket/httpprobe.json > bucket/httpprobe.json.tmp
-          mv bucket/httpprobe.json.tmp bucket/httpprobe.json
+          for arch in amd64 386 arm64; do
+            HASH=$(sha256sum tmp/httpprobe-${{ github.ref_name }}_windows_$arch.tar.gz | awk '{print $1}')
+            echo "${arch}_hash=$HASH" >> $GITHUB_ENV
+          done
+
+      - name: Update Scoop manifest
+        run: |
+          jq --arg version "${{ env.version }}" \
+             --arg amd64 "${{ env.amd64_hash }}" \
+             --arg i386 "${{ env.386_hash }}" \
+             --arg arm64 "${{ env.arm64_hash }}" \
+          '
+          .version = $version |
+          .architecture."64bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + $version + "/httpprobe-v" + $version + "_windows_amd64.tar.gz" |
+          .architecture."64bit".hash = $amd64 |
+          .architecture."32bit".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + $version + "/httpprobe-v" + $version + "_windows_386.tar.gz" |
+          .architecture."32bit".hash = $i386 |
+          .architecture."arm64".url = "https://github.com/mrfoh/httpprobe/releases/download/v" + $version + "/httpprobe-v" + $version + "_windows_arm64.tar.gz" |
+          .architecture."arm64".hash = $arm64
+          ' bucket/httpprobe.json > bucket/httpprobe.json.tmp && mv bucket/httpprobe.json.tmp bucket/httpprobe.json
 
       - name: Commit and push updated manifest
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
           git add bucket/httpprobe.json
-          
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: update scoop manifest for ${{ github.ref_name }}"
-            git push origin main
-          fi
+          git commit -m "chore: update scoop manifest for ${{ github.ref_name }} [skip ci]" || exit 0
+          git push origin main

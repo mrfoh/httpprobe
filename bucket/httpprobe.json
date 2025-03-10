@@ -18,7 +18,8 @@
     }
   },
   "bin": "httpprobe.exe",
-  "checkver": "github",
+  "extract_dir": "httpprobe",
+  "checkver": "github:mrfoh/httpprobe",
   "autoupdate": {
     "architecture": {
       "64bit": {
