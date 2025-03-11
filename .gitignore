@@ -8,3 +8,4 @@ logs
 test-results.json
 .env
 dist/
+*.login
