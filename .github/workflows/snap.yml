@@ -1,0 +1,44 @@
+name: Build and Publish Snap
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+        with:
+          use_lxd: true
+          
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "The version is $VERSION"
+          
+      - name: Update version in snapcraft.yaml
+        run: |
+          sed -i "s/^version: git/version: $VERSION/" snap/snapcraft.yaml
+          cat snap/snapcraft.yaml
+          
+      - name: Build snap
+        run: |
+          snapcraft
+          
+      - name: Publish snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+        with:
+          snap: httpprobe_*.snap
+          release: stable

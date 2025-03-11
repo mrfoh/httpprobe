@@ -1,0 +1,29 @@
+name: httpprobe
+version: git
+summary: HTTP API testing tool
+description: |
+  A powerful HTTP API testing tool for defining, running, 
+  and validating API tests using YAML or JSON test definitions.
+
+base: core22
+grade: stable
+confinement: strict
+
+parts:
+  httpprobe:
+    plugin: go
+    source: .
+    source-type: local
+    build-snaps:
+      - go
+    override-build: |
+      craftctl default
+      cd $CRAFT_PART_SRC
+      go build -o $CRAFT_PART_INSTALL/bin/httpprobe ./cmd/main.go
+
+apps:
+  httpprobe:
+    command: bin/httpprobe
+    plugs:
+      - network
+      - home
