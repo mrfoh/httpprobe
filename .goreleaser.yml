@@ -95,9 +95,8 @@ snapcrafts:
     name: httpprobe
     publish: true
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    summary: A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON
-    description: |
-      httpprobe is a powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON.
+    summary: A powerful HTTP API testing tool
+    description: httpprobe is a powerful HTTP API testing tool.
     grade: stable
     confinement: strict
     license: MIT
