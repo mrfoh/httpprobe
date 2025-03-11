@@ -10,6 +10,9 @@ permissions:
   packages: write
   issues: write
 
+env:
+  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -44,11 +47,7 @@ jobs:
           cache: true
 
       - name: Set up Snapcraft
-        run: |
-          sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install snapcraft
-          mkdir -p $HOME/.cache/snapcraft/download
-          mkdir -p $HOME/.cache/snapcraft/stage-packages
+        uses: samuelmeuli/action-snapcraft@v3
           
       # Run GoReleaser
       - name: Run GoReleaser
@@ -60,4 +59,3 @@ jobs:
         env:
           # Used for GitHub token and pushing to other repos
           GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_LOGIN }}
