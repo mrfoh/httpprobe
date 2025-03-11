@@ -90,4 +90,20 @@ brews:
     test: |
       system "#{bin}/httpprobe", "version"
 
-# Snapcraft is handled by external snapcraft.yaml in the snap directory
+snapcrafts:
+  - id: httpprobe
+    name: httpprobe
+    publish: true
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    summary: A powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON
+    description: |
+      httpprobe is a powerful HTTP API testing tool for defining, running, and validating API tests using YAML or JSON.
+    grade: stable
+    confinement: strict
+    license: MIT
+    base: core20
+    apps:
+      probe:
+        command: httpprobe
+        plugs: [ "home", "network" ]
+        aliases: [ "httprobe" ]

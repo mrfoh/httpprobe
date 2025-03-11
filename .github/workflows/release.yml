@@ -42,6 +42,13 @@ jobs:
         with:
           go-version: '1.23'
           cache: true
+
+      - name: Set up Snapcraft
+        run: |
+          sudo apt-get update
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install snapcraft
+          mkdir -p $HOME/.cache/snapcraft/download
+          mkdir -p $HOME/.cache/snapcraft/stage-packages
           
       # Run GoReleaser
       - name: Run GoReleaser
@@ -53,3 +60,4 @@ jobs:
         env:
           # Used for GitHub token and pushing to other repos
           GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_LOGIN }}
