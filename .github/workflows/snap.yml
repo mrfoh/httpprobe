@@ -50,7 +50,7 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT=lxd snapcraft
           
       - name: Upload snap as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: httpprobe-snap
           path: ./*.snap
