@@ -7,38 +7,58 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v2
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          use_lxd: true
-          
+          go-version: '1.23'
+          cache: true
+
       - name: Extract version from tag
         id: get_version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "The version is $VERSION"
+          
+      - name: Setup Snapcraft
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y snapd
+          sudo snap install snapcraft --classic
           
       - name: Update version in snapcraft.yaml
         run: |
-          sed -i "s/^version: git/version: $VERSION/" snap/snapcraft.yaml
+          sed -i "s/^version: git/version: ${{ steps.get_version.outputs.version }}/" snap/snapcraft.yaml
           cat snap/snapcraft.yaml
+          
+      - name: Install LXD
+        run: |
+          sudo snap install lxd
+          sudo lxd init --auto
           
       - name: Build snap
         run: |
-          snapcraft
+          # Use LXD as the build environment
+          sudo snap install snapcraft --classic
+          SNAPCRAFT_BUILD_ENVIRONMENT=lxd snapcraft
+          
+      - name: Upload snap as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: httpprobe-snap
+          path: ./*.snap
           
       - name: Publish snap
-        uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
-        with:
-          snap: httpprobe_*.snap
-          release: stable
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "${{ secrets.SNAPCRAFT_TOKEN }}" > snapcraft.login
+          snapcraft login --with snapcraft.login
+          snapcraft upload --release=stable *.snap
+          rm -f snapcraft.login

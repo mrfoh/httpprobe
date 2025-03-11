@@ -13,13 +13,11 @@ parts:
   httpprobe:
     plugin: go
     source: .
-    source-type: local
-    build-snaps:
-      - go
+    go-buildtags: [static]
+    build-environment:
+      - CGO_ENABLED: "0"
     override-build: |
-      craftctl default
-      cd $CRAFT_PART_SRC
-      go build -o $CRAFT_PART_INSTALL/bin/httpprobe ./cmd/main.go
+      go build -o $SNAPCRAFT_PART_INSTALL/bin/httpprobe ./cmd/main.go
 
 apps:
   httpprobe:
