@@ -24,7 +24,7 @@ type Runner struct {
 	// Map to track processed hooks to prevent infinite recursion
 	processedHooks map[string]bool
 	// Mutex to protect the processed hooks map
-	hooksMutex     sync.Mutex
+	hooksMutex sync.Mutex
 }
 
 func NewRunner(opts *TestRunnerOptions) TestRunner {
@@ -241,7 +241,14 @@ func (r *Runner) executeTestDefinition(def *tests.TestDefinition) (tests.TestDef
 		Suites: make(map[string]tests.TestSuiteResult, len(def.Suites)),
 	}
 
+	// Process environment variables in variable values
+	if err := tests.InterpolateVariableValues(def.Variables); err != nil {
+		r.Logger.Error("Error interpolating environment variables in definition variables", zap.Error(err))
+		// Continue execution despite interpolation errors
+	}
+
 	r.Logger.Debug(fmt.Sprintf("executing test definition: %s", def.Name))
+	r.Logger.Debug("test definition variables", zap.Any("variables", def.Variables))
 
 	// Execute BeforeAll hooks if they exist
 	if len(def.BeforeAll) > 0 {
@@ -268,14 +275,20 @@ func (r *Runner) executeTestDefinition(def *tests.TestDefinition) (tests.TestDef
 
 		// Create a copy of definition variables for the suite
 		suiteVars := make(map[string]tests.Variable)
-		
+
 		// First add definition-level variables
 		for k, v := range def.Variables {
 			suiteVars[k] = v
 		}
-		
+
 		// Then add suite-level variables (to override any definition variables with the same name)
 		if suite.Variables != nil {
+			// First process environment variables in suite-level variable values
+			if err := tests.InterpolateVariableValues(suite.Variables); err != nil {
+				r.Logger.Error("Error interpolating environment variables in suite variables", zap.Error(err))
+				// Continue execution despite interpolation errors
+			}
+
 			for k, v := range suite.Variables {
 				suiteVars[k] = v
 			}
@@ -298,12 +311,13 @@ func (r *Runner) executeTestDefinition(def *tests.TestDefinition) (tests.TestDef
 		}
 
 		// Set up the suite with variables
-		
 		// Pass variables to suite
 		suite.Variables = suiteVars
 
 		// Execute the test suite
 		r.Logger.Debug(fmt.Sprintf("executing test suite: %s", suite.Name))
+		r.Logger.Debug("suite variables", zap.Any("variables", suite.Variables))
+
 		suiteResult, err := suite.Run(r.Logger, r.HttpClient)
 		if err != nil {
 			r.Logger.Error("error executing test suite", zap.Error(err))
