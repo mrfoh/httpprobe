@@ -175,6 +175,31 @@ func InterpolateObject(obj interface{}, variables map[string]Variable) (interfac
 	}
 }
 
+// InterpolateVariableValues interpolates variable templates definted in the variable values of a map[string]Variable
+func InterpolateVariableValues(variables map[string]Variable) error {
+	if variables == nil {
+		return nil
+	}
+
+	for name, variable := range variables {
+		if variable.Value == "" {
+			continue
+		}
+
+		// Process environment variables in the variable value
+		interpolated, err := InterpolateVariables(variable.Value, nil) // nil variables because we're only processing env vars
+		if err != nil {
+			return fmt.Errorf("error interpolating variables in variable %s: %w", name, err)
+		}
+
+		// Update the variable value with the interpolated value
+		variable.Value = interpolated
+		variables[name] = variable
+	}
+
+	return nil
+}
+
 // InterpolateRequest applies variable interpolation to all fields in a Request
 func InterpolateRequest(request *Request, variables map[string]Variable) error {
 	var err error
