@@ -138,10 +138,45 @@ func InterpolateVariables(input string, variables map[string]Variable) (string, 
 	return result, nil
 }
 
+// extractSoleVariableRef checks if a string is exactly a single variable reference
+// like "${count}" and returns the variable name. Returns false for mixed strings
+// like "prefix_${count}", env refs "${env:X}", or function calls "${random(5)}".
+func extractSoleVariableRef(s string) (string, bool) {
+	if strings.HasPrefix(s, "${") && strings.HasSuffix(s, "}") &&
+		strings.Count(s, "${") == 1 &&
+		!strings.HasPrefix(s, "${env:") &&
+		!strings.Contains(s, "(") {
+		return s[2 : len(s)-1], true
+	}
+	return "", false
+}
+
+// CoerceVariableValue converts a variable's string value to the appropriate Go type
+// based on the variable's Type field. Supported types: "int", "float", "bool".
+// If Type is empty or "string", the value is returned as-is.
+func CoerceVariableValue(variable Variable) (interface{}, error) {
+	switch variable.Type {
+	case "int":
+		return strconv.Atoi(variable.Value)
+	case "float":
+		return strconv.ParseFloat(variable.Value, 64)
+	case "bool":
+		return strconv.ParseBool(variable.Value)
+	default:
+		return variable.Value, nil
+	}
+}
+
 // InterpolateObject recursively interpolates variables in an object (map, slice, or scalar value)
 func InterpolateObject(obj interface{}, variables map[string]Variable) (interface{}, error) {
 	switch v := obj.(type) {
 	case string:
+		// If the entire string is a single variable reference, apply type coercion
+		if name, ok := extractSoleVariableRef(v); ok {
+			if variable, exists := variables[name]; exists {
+				return CoerceVariableValue(variable)
+			}
+		}
 		return InterpolateVariables(v, variables)
 	case map[string]interface{}:
 		result := make(map[string]interface{})
@@ -186,8 +221,8 @@ func InterpolateVariableValues(variables map[string]Variable) error {
 			continue
 		}
 
-		// Process environment variables in the variable value
-		interpolated, err := InterpolateVariables(variable.Value, nil) // nil variables because we're only processing env vars
+		// Process environment variables and cross-variable references
+		interpolated, err := InterpolateVariables(variable.Value, variables)
 		if err != nil {
 			return fmt.Errorf("error interpolating variables in variable %s: %w", name, err)
 		}

@@ -102,7 +102,12 @@ func (c *HttpClientImpl) requestUrl(value string, query map[string]interface{}) 
 
 	// Determine base URL
 	if c.Opts.BaseUrl != "" {
-		baseUrl = fmt.Sprintf("%s/%s", c.Opts.BaseUrl, value)
+		joined, err := url.JoinPath(c.Opts.BaseUrl, value)
+		if err != nil {
+			baseUrl = fmt.Sprintf("%s/%s", c.Opts.BaseUrl, value)
+		} else {
+			baseUrl = joined
+		}
 	} else {
 		baseUrl = value
 	}
