@@ -186,8 +186,8 @@ func InterpolateVariableValues(variables map[string]Variable) error {
 			continue
 		}
 
-		// Process environment variables in the variable value
-		interpolated, err := InterpolateVariables(variable.Value, nil) // nil variables because we're only processing env vars
+		// Process environment variables and cross-variable references
+		interpolated, err := InterpolateVariables(variable.Value, variables)
 		if err != nil {
 			return fmt.Errorf("error interpolating variables in variable %s: %w", name, err)
 		}

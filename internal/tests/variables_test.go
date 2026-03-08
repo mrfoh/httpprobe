@@ -91,6 +91,84 @@ func TestInterpolateVariables(t *testing.T) {
 	}
 }
 
+func TestInterpolateVariableValues_CrossVariableReferences(t *testing.T) {
+	variables := map[string]Variable{
+		"base_url":       {Type: "string", Value: "https://api.example.com"},
+		"users_endpoint": {Type: "string", Value: "${base_url}/users"},
+	}
+
+	err := InterpolateVariableValues(variables)
+	if err != nil {
+		t.Fatalf("InterpolateVariableValues returned an error: %v", err)
+	}
+
+	expected := "https://api.example.com/users"
+	if variables["users_endpoint"].Value != expected {
+		t.Errorf("users_endpoint = %q, want %q", variables["users_endpoint"].Value, expected)
+	}
+}
+
+func TestInterpolateVariableValues_EnvAndCrossVariable(t *testing.T) {
+	os.Setenv("TEST_HOST", "api.example.com")
+	defer os.Unsetenv("TEST_HOST")
+
+	variables := map[string]Variable{
+		"base_url": {Type: "string", Value: "https://${env:TEST_HOST}"},
+		"endpoint": {Type: "string", Value: "${base_url}/users"},
+	}
+
+	err := InterpolateVariableValues(variables)
+	if err != nil {
+		t.Fatalf("InterpolateVariableValues returned an error: %v", err)
+	}
+
+	if variables["base_url"].Value != "https://api.example.com" {
+		t.Errorf("base_url = %q, want %q", variables["base_url"].Value, "https://api.example.com")
+	}
+}
+
+func TestInterpolateVariableValues_NilMap(t *testing.T) {
+	err := InterpolateVariableValues(nil)
+	if err != nil {
+		t.Fatalf("InterpolateVariableValues(nil) returned an error: %v", err)
+	}
+}
+
+func TestInterpolateVariableValues_NoReferences(t *testing.T) {
+	variables := map[string]Variable{
+		"host": {Type: "string", Value: "localhost"},
+		"port": {Type: "string", Value: "8080"},
+	}
+
+	err := InterpolateVariableValues(variables)
+	if err != nil {
+		t.Fatalf("InterpolateVariableValues returned an error: %v", err)
+	}
+
+	if variables["host"].Value != "localhost" {
+		t.Errorf("host = %q, want %q", variables["host"].Value, "localhost")
+	}
+	if variables["port"].Value != "8080" {
+		t.Errorf("port = %q, want %q", variables["port"].Value, "8080")
+	}
+}
+
+func TestInterpolateVariableValues_UnresolvableReference(t *testing.T) {
+	variables := map[string]Variable{
+		"endpoint": {Type: "string", Value: "${nonexistent}/users"},
+	}
+
+	err := InterpolateVariableValues(variables)
+	if err != nil {
+		t.Fatalf("InterpolateVariableValues returned an error: %v", err)
+	}
+
+	// Unresolvable references should be left as-is
+	if variables["endpoint"].Value != "${nonexistent}/users" {
+		t.Errorf("endpoint = %q, want %q", variables["endpoint"].Value, "${nonexistent}/users")
+	}
+}
+
 func TestInterpolateRequest(t *testing.T) {
 	variables := map[string]Variable{
 		"api_url": {Type: "string", Value: "https://api.example.com"},
