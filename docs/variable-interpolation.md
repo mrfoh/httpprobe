@@ -60,6 +60,52 @@ suites:
 
 Variables defined at the test definition level are available to all test suites, while suite-level variables are only available within that suite.
 
+## Variable Type Coercion
+
+By default, all variable values are treated as strings. If you need typed values in structured JSON request bodies (e.g. numbers or booleans instead of strings), you can set the `type` field to one of the supported types:
+
+| Type     | Description                  | Example Value |
+|----------|------------------------------|---------------|
+| `string` | Default, no conversion       | `"hello"`     |
+| `int`    | Coerced to integer           | `"42"`        |
+| `float`  | Coerced to floating point    | `"3.14"`      |
+| `bool`   | Coerced to boolean           | `"true"`      |
+
+Type coercion only applies when a structured JSON body field contains a single variable reference (e.g. `${count}`). Mixed strings like `"items_${count}"` are always treated as strings regardless of the variable's type.
+
+If the `type` field is omitted, the variable defaults to `string`, preserving backward compatibility.
+
+```yaml
+variables:
+  retries:
+    type: int
+    value: "3"
+  rate:
+    type: float
+    value: "1.5"
+  enabled:
+    type: bool
+    value: "true"
+  label:
+    type: string
+    value: "test-run"
+
+suites:
+  - name: Typed Variables Example
+    cases:
+      - title: Create resource
+        request:
+          method: POST
+          url: "https://api.example.com/resources"
+          body:
+            type: json
+            data:
+              retries: "${retries}"    # sent as 3 (integer)
+              rate: "${rate}"          # sent as 1.5 (float)
+              enabled: "${enabled}"    # sent as true (boolean)
+              label: "${label}"        # sent as "test-run" (string)
+```
+
 ## Using Environment Variables
 
 You can reference environment variables using the `${env:VAR_NAME}` syntax:

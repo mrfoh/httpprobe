@@ -169,6 +169,93 @@ func TestInterpolateVariableValues_UnresolvableReference(t *testing.T) {
 	}
 }
 
+func TestCoerceVariableValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		variable Variable
+		want     interface{}
+		wantErr  bool
+	}{
+		{"int", Variable{Type: "int", Value: "42"}, 42, false},
+		{"float", Variable{Type: "float", Value: "3.14"}, 3.14, false},
+		{"bool true", Variable{Type: "bool", Value: "true"}, true, false},
+		{"bool false", Variable{Type: "bool", Value: "false"}, false, false},
+		{"string", Variable{Type: "string", Value: "hello"}, "hello", false},
+		{"empty type", Variable{Type: "", Value: "hello"}, "hello", false},
+		{"invalid int", Variable{Type: "int", Value: "abc"}, 0, true},
+		{"invalid float", Variable{Type: "float", Value: "abc"}, 0.0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := CoerceVariableValue(tt.variable)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CoerceVariableValue() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("CoerceVariableValue() = %v (%T), want %v (%T)", got, got, tt.want, tt.want)
+			}
+		})
+	}
+}
+
+func TestInterpolateObject_TypedVariables(t *testing.T) {
+	variables := map[string]Variable{
+		"count":   {Type: "int", Value: "42"},
+		"rate":    {Type: "float", Value: "3.14"},
+		"active":  {Type: "bool", Value: "true"},
+		"name":    {Type: "string", Value: "John"},
+	}
+
+	obj := map[string]interface{}{
+		"count":  "${count}",
+		"rate":   "${rate}",
+		"active": "${active}",
+		"name":   "${name}",
+	}
+
+	result, err := InterpolateObject(obj, variables)
+	if err != nil {
+		t.Fatalf("InterpolateObject returned an error: %v", err)
+	}
+
+	m := result.(map[string]interface{})
+
+	if v, ok := m["count"].(int); !ok || v != 42 {
+		t.Errorf("count = %v (%T), want 42 (int)", m["count"], m["count"])
+	}
+	if v, ok := m["rate"].(float64); !ok || v != 3.14 {
+		t.Errorf("rate = %v (%T), want 3.14 (float64)", m["rate"], m["rate"])
+	}
+	if v, ok := m["active"].(bool); !ok || v != true {
+		t.Errorf("active = %v (%T), want true (bool)", m["active"], m["active"])
+	}
+	if v, ok := m["name"].(string); !ok || v != "John" {
+		t.Errorf("name = %v (%T), want John (string)", m["name"], m["name"])
+	}
+}
+
+func TestInterpolateObject_MixedStringNotCoerced(t *testing.T) {
+	variables := map[string]Variable{
+		"count": {Type: "int", Value: "42"},
+	}
+
+	obj := map[string]interface{}{
+		"label": "items_${count}",
+	}
+
+	result, err := InterpolateObject(obj, variables)
+	if err != nil {
+		t.Fatalf("InterpolateObject returned an error: %v", err)
+	}
+
+	m := result.(map[string]interface{})
+	if v, ok := m["label"].(string); !ok || v != "items_42" {
+		t.Errorf("label = %v (%T), want items_42 (string)", m["label"], m["label"])
+	}
+}
+
 func TestInterpolateRequest(t *testing.T) {
 	variables := map[string]Variable{
 		"api_url": {Type: "string", Value: "https://api.example.com"},
