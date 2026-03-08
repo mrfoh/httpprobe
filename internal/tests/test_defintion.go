@@ -35,7 +35,7 @@ type TestSuite struct {
 	// Cases to test for in the suite
 	Cases []TestCase `yaml:"cases" json:"cases"`
 	// Variables available for test cases in this suite
-	Variables map[string]Variable
+	Variables map[string]Variable `yaml:"variables" json:"variables"`
 	// Configuration options for the test suite
 	Config map[string]interface{} `yaml:"config" json:"config"`
 }
