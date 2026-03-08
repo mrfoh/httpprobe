@@ -1,6 +1,8 @@
 package httpprobe
 
 import (
+	"os"
+
 	"github.com/mrfoh/httpprobe/internal/logging"
 	"github.com/mrfoh/httpprobe/internal/runner"
 	"github.com/mrfoh/httpprobe/internal/tests"
@@ -83,6 +85,16 @@ func NewRunCmd() *cobra.Command {
 			}
 
 			testrunner.Write(results)
+
+			for _, defResult := range results {
+				for _, suiteResult := range defResult.Suites {
+					for _, caseResult := range suiteResult.Cases {
+						if !caseResult.Passed {
+							os.Exit(1)
+						}
+					}
+				}
+			}
 		},
 	}
 
