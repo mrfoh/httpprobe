@@ -178,7 +178,7 @@ func NewValidator(schema *ast.Schema) *Validator {
 
 // ValidateQuery validates a single GraphQL query string against the schema
 func (v *Validator) ValidateQuery(query string) []ValidationError {
-	doc, gqlErr := gqlparser.LoadQuery(v.Schema, query)
+	doc, gqlErr := gqlparser.LoadQueryWithRules(v.Schema, query, nil)
 	if gqlErr != nil {
 		var errors []ValidationError
 		for _, e := range gqlErr {
