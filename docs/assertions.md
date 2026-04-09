@@ -197,7 +197,12 @@ Available GraphQL assertion options:
 | `partial_data` | `false` to fail if both `data` and `errors` coexist |
 | `data_schema` | JSON Schema to validate `response.data` against |
 
-Data paths use JSONPath expressions relative to `response.data`, so `$.user.id` refers to `response.data.user.id`. Regex patterns are supported by wrapping the expected value in forward slashes (`/pattern/`).
+Data paths use JSONPath expressions relative to `response.data`, so `$.user.id` refers to `response.data.user.id`. Data assertions support:
+
+- **Variable interpolation** — `"${user_id}"` resolves exported and defined variables
+- **Comparison operators** — `"> 5"`, `">= 10"`, `"contains error"` (same as body assertions)
+- **Regex patterns** — `"/.+@.+/"` (wrapped in forward slashes)
+- **Length checks** — `"length > 0"`, `"length 10"`, `"length <= 5"`
 
 For full details, see the [GraphQL Testing](graphql#graphql-assertions) page.
 

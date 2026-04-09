@@ -155,7 +155,50 @@ graphql:
     "$.user.email": "/.+@.+/"    # Regex pattern matching
 ```
 
-Regex patterns are wrapped in forward slashes (`/pattern/`).
+#### Variable Interpolation in Assertions
+
+Exported variables and defined variables can be used in expected values:
+
+```yaml
+graphql:
+  data:
+    "$.user.id": "${user_id}"
+    "$.user.name": "${expected_name}"
+```
+
+#### Value Comparisons
+
+GraphQL data assertions support the same comparison operators as body assertions:
+
+```yaml
+graphql:
+  data:
+    # Equality (default)
+    "$.user.name": "Alice"
+
+    # Numeric comparisons
+    "$.user.age": "> 18"
+    "$.user.score": ">= 100"
+
+    # String contains
+    "$.user.email": "contains @example.com"
+
+    # Regex patterns (wrapped in forward slashes)
+    "$.user.email": "/.+@.+/"
+```
+
+#### Length Checks
+
+You can assert on the length of strings, arrays, and objects:
+
+```yaml
+graphql:
+  data:
+    "$.user.id": "length > 0"        # Non-empty string
+    "$.user.posts": "length > 0"     # Array with at least 1 item
+    "$.user.roles": "length 3"       # Exactly 3 items
+    "$.user.tags": "length <= 10"    # At most 10 items
+```
 
 ### errors
 

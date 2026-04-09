@@ -302,6 +302,17 @@ func InterpolateRequest(request *Request, variables map[string]Variable) error {
 		}
 	}
 
+	// Interpolate assertion expected values
+	if request.Assertions != nil {
+		interpolated, err := InterpolateObject(request.Assertions, variables)
+		if err != nil {
+			return fmt.Errorf("error interpolating assertions: %w", err)
+		}
+		if m, ok := interpolated.(map[string]interface{}); ok {
+			request.Assertions = m
+		}
+	}
+
 	return nil
 }
 

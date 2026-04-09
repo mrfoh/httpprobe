@@ -235,7 +235,7 @@ func (suite *TestSuite) ExecCase(testcase *TestCase, logger logging.Logger, clie
 	}
 
 	// Validate response using the new assertion framework
-	passed, validationErrors, err := validateWithAssertions(resp, testcase.Request.Assertions, logger)
+	passed, validationErrors, err := validateWithAssertions(resp, request.Assertions, logger)
 
 	elapsedTime := time.Since(startTime).Seconds()
 
