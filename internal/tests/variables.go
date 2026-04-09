@@ -277,6 +277,31 @@ func InterpolateRequest(request *Request, variables map[string]Variable) error {
 		}
 	}
 
+	// Interpolate GraphQL body fields
+	if request.Body.Type == "graphql" {
+		request.Body.Query, err = InterpolateVariables(request.Body.Query, variables)
+		if err != nil {
+			return fmt.Errorf("error interpolating graphql query: %w", err)
+		}
+
+		if request.Body.Variables != nil {
+			interpolated, err := InterpolateObject(request.Body.Variables, variables)
+			if err != nil {
+				return fmt.Errorf("error interpolating graphql variables: %w", err)
+			}
+			if m, ok := interpolated.(map[string]interface{}); ok {
+				request.Body.Variables = m
+			}
+		}
+
+		if request.Body.OperationName != "" {
+			request.Body.OperationName, err = InterpolateVariables(request.Body.OperationName, variables)
+			if err != nil {
+				return fmt.Errorf("error interpolating graphql operation name: %w", err)
+			}
+		}
+	}
+
 	return nil
 }
 

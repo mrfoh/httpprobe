@@ -21,6 +21,30 @@ type TestDefinition struct {
 	AfterEach []string `yaml:"after_each"`
 	// Test suites to be executed
 	Suites []TestSuite `yaml:"suites" json:"suites"`
+	// GraphQL configuration for pre-flight query validation
+	GraphQL *GraphQLConfig `yaml:"graphql" json:"graphql"`
+}
+
+// GraphQLConfig holds GraphQL-specific configuration for a test definition
+type GraphQLConfig struct {
+	Schema     GraphQLSchemaConfig     `yaml:"schema" json:"schema"`
+	Validation GraphQLValidationConfig `yaml:"validation" json:"validation"`
+}
+
+// GraphQLSchemaConfig defines how to load the GraphQL schema
+type GraphQLSchemaConfig struct {
+	// Source is the schema source type: "file", "introspection", or "url"
+	Source string `yaml:"source" json:"source"`
+	// Path is the file path, URL, or introspection endpoint depending on Source
+	Path string `yaml:"path" json:"path"`
+}
+
+// GraphQLValidationConfig controls pre-flight query validation behavior
+type GraphQLValidationConfig struct {
+	// Enabled controls whether pre-flight validation runs
+	Enabled bool `yaml:"enabled" json:"enabled"`
+	// OnError determines behavior when validation fails: "fail" (default) or "warn"
+	OnError string `yaml:"on_error" json:"on_error"`
 }
 
 type Variable struct {
@@ -67,6 +91,10 @@ type Request struct {
 type RequestBody struct {
 	Type string `yaml:"type" json:"type"`
 	Data any    `yaml:"data" json:"data"`
+	// GraphQL-specific fields (used when Type == "graphql")
+	Query         string                 `yaml:"query" json:"query"`
+	Variables     map[string]interface{} `yaml:"variables" json:"variables"`
+	OperationName string                 `yaml:"operation_name" json:"operation_name"`
 }
 
 type RequestHeader struct {
@@ -90,6 +118,15 @@ type Assertion struct {
 type RequestExport struct {
 	// The data to be exported from the response body
 	Body []BodyExport `yaml:"body" json:"body"`
+	// GraphQL export shorthand — JSONPaths relative to response.data
+	GraphQL []GraphQLExport `yaml:"graphql" json:"graphql"`
+}
+
+type GraphQLExport struct {
+	// Path is a JSONPath relative to response.data (e.g., "$.login.token")
+	Path string `yaml:"path" json:"path"`
+	// As is the variable name to export the value to
+	As string `yaml:"as" json:"as"`
 }
 
 type BodyExport struct {
@@ -111,6 +148,12 @@ func (def *TestDefinition) Validate() error {
 	for _, suite := range def.Suites {
 		if suite.Name == "" {
 			return fmt.Errorf("suite name is required")
+		}
+
+		for _, testCase := range suite.Cases {
+			if testCase.Request.Body.Type == "graphql" && testCase.Request.Body.Query == "" {
+				return fmt.Errorf("graphql body requires a 'query' field in case '%s' of suite '%s'", testCase.Title, suite.Name)
+			}
 		}
 	}
 
