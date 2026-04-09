@@ -9,10 +9,9 @@ import (
 func main() {
 	// Root command
 	rootCmd := httpprobe.NewRootCmd()
-	versionCmd := httpprobe.NewVersionCmd()
 	runCmd := httpprobe.NewRunCmd()
 
-	rootCmd.AddCommand(versionCmd, runCmd)
+	rootCmd.AddCommand(runCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Error executing root command: %v", err)

@@ -2,6 +2,9 @@ package httpprobe
 
 import "github.com/spf13/cobra"
 
+// version is set during build using -ldflags
+var version = "dev"
+
 var (
 	defaultTestFileExtensions = []string{".test.yaml", ".test.json"}
 	defaultSearchPath         = "./"
@@ -24,9 +27,10 @@ var (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "httpprobe",
-		Short: "CLI tool to test HTTP API endpoints",
-		Long:  "CLI tool to test HTTP API endpoints using a declarative YAML configuration file.",
+		Use:     "httpprobe",
+		Short:   "CLI tool to test HTTP API endpoints",
+		Long:    "CLI tool to test HTTP API endpoints using a declarative YAML configuration file.",
+		Version: version,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.Help()
 			if err != nil {
@@ -36,7 +40,7 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "Enable verbose output")
+	cmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "V", false, "Enable verbose output")
 	cmd.PersistentFlags().StringVarP(&EnvFile, "envfile", "e", ".env", "Environment file to load environment variables from")
 	cmd.PersistentFlags().StringVarP(&SearchPath, "searchpath", "p", defaultSearchPath, "Path to search for test files")
 	cmd.PersistentFlags().StringSliceVarP(&FileExtensions, "include", "i", defaultTestFileExtensions, "Include tests with the specified extensions")

@@ -88,7 +88,7 @@ brews:
     install: |
       bin.install "httpprobe"
     test: |
-      system "#{bin}/httpprobe", "version"
+      system "#{bin}/httpprobe", "--version"
 
 snapcrafts:
   - id: httpprobe
