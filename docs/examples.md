@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Examples
-nav_order: 7
+nav_order: 8
 description: Practical examples of using HttpProbe for different API testing scenarios
 ---
 
@@ -447,6 +447,134 @@ suites:
                     }
                   }
                 }
+```
+
+## GraphQL API Tests
+
+### Simple GraphQL Query
+
+```yaml
+name: "GraphQL User API"
+description: "Test GraphQL user queries"
+variables:
+  graphql_url:
+    type: string
+    value: "https://api.example.com/graphql"
+suites:
+  - name: "User Queries"
+    cases:
+      - title: "Get User by ID"
+        request:
+          url: "${graphql_url}"
+          body:
+            type: graphql
+            query: |
+              query GetUser($id: ID!) {
+                user(id: $id) {
+                  id
+                  name
+                  email
+                }
+              }
+            variables:
+              id: "123"
+          assertions:
+            status: 200
+            graphql:
+              no_errors: true
+              data:
+                "$.user.id": "123"
+                "$.user.name": "Alice"
+```
+
+### GraphQL Authentication Flow
+
+```yaml
+name: "GraphQL Auth Flow"
+description: "Login via GraphQL mutation and use the token"
+variables:
+  graphql_url:
+    type: string
+    value: "https://api.example.com/graphql"
+suites:
+  - name: "Authentication"
+    cases:
+      - title: "Login"
+        request:
+          url: "${graphql_url}"
+          body:
+            type: graphql
+            query: |
+              mutation Login($email: String!, $password: String!) {
+                login(email: $email, password: $password) {
+                  token
+                  user { id name }
+                }
+              }
+            variables:
+              email: "alice@example.com"
+              password: "${env:TEST_PASSWORD}"
+          assertions:
+            status: 200
+            graphql:
+              no_errors: true
+          export:
+            graphql:
+              - path: "$.login.token"
+                as: "auth_token"
+              - path: "$.login.user.id"
+                as: "user_id"
+
+      - title: "Get Profile"
+        request:
+          url: "${graphql_url}"
+          headers:
+            - key: Authorization
+              value: "Bearer ${auth_token}"
+          body:
+            type: graphql
+            query: |
+              query {
+                me { id name email role }
+              }
+          assertions:
+            status: 200
+            graphql:
+              no_errors: true
+              data:
+                "$.me.id": "${user_id}"
+```
+
+### GraphQL Error Testing
+
+```yaml
+name: "GraphQL Error Cases"
+description: "Test GraphQL error responses"
+variables:
+  graphql_url:
+    type: string
+    value: "https://api.example.com/graphql"
+suites:
+  - name: "Error Handling"
+    cases:
+      - title: "Query Nonexistent User"
+        request:
+          url: "${graphql_url}"
+          body:
+            type: graphql
+            query: |
+              query GetUser($id: ID!) {
+                user(id: $id) { id name }
+              }
+            variables:
+              id: "nonexistent"
+          assertions:
+            status: 200
+            graphql:
+              no_errors: false
+              errors:
+                - message: "User not found"
+                  extensions.code: "NOT_FOUND"
 ```
 
 ## Integration Tests

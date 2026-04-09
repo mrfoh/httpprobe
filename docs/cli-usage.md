@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Command Line Usage
-nav_order: 5
+nav_order: 6
 description: Learn how to use the HttpProbe command line interface
 ---
 
@@ -30,7 +30,7 @@ httpprobe [command] [arguments] [options]
 The main commands are:
 
 - `run` - Run test definitions
-- `version` - Display the current version
+- `--version, -v` - Display the current version
 
 ## Running Tests
 
@@ -70,7 +70,8 @@ HttpProbe supports several command line options to customize test execution and 
 | `-i, --include` | Include tests with the specified extensions | `.test.yaml, .test.json` |
 | `-o, --output` | Output format to use (text, json, table) | `text` |
 | `-p, --searchpath` | Path to search for test files | `./` |
-| `-v, --verbose` | Enable verbose output | `false` |
+| `-V, --verbose` | Enable verbose output | `false` |
+| `-v, --version` | Display the current version | - |
 | `-h, --help` | Display help information | - |
 
 ### Output Format
@@ -173,6 +174,12 @@ httpprobe run --output json --outputfile results.json --searchpath ./tests/
 
 ```bash
 httpprobe run --verbose
+```
+
+### Check Version
+
+```bash
+httpprobe --version
 ```
 
 ## Environment Variables

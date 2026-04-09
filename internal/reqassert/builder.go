@@ -17,6 +17,7 @@ func NewBuilder() *Builder {
 	registry.Register("status", &StatusAssertionFactory{})
 	registry.Register("headers", &HeaderAssertionFactory{})
 	registry.Register("body", &BodyAssertionFactory{})
+	registry.Register("graphql", &GraphQLAssertionFactory{})
 	
 	return &Builder{
 		registry: registry,
@@ -62,7 +63,16 @@ func (b *Builder) BuildAssertions(assertionData map[string]interface{}) ([]Asser
 			assertions = append(assertions, assertion)
 		}
 	}
-	
+
+	// Process graphql assertions
+	if graphql, ok := assertionData["graphql"].(map[string]interface{}); ok {
+		assertion, err := b.registry.Create("graphql", "", graphql)
+		if err != nil {
+			return nil, err
+		}
+		assertions = append(assertions, assertion)
+	}
+
 	return assertions, nil
 }
 

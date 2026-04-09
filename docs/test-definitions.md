@@ -204,8 +204,8 @@ The `request` section defines the HTTP request to be made:
 
 For request bodies, you must specify:
 
-- `type`: The content type (currently supported: `json`, `text`)
-- `data`: The actual body content
+- `type`: The content type (supported: `json`, `text`, `graphql`)
+- `data`: The actual body content (for `json` and `text` types)
 
 For JSON bodies, you can specify the data in several ways:
 
@@ -232,6 +232,22 @@ body:
   type: json
   data: null
 ```
+
+For GraphQL bodies, use `query`, `variables`, and `operation_name` instead of `data`:
+
+```yaml
+body:
+  type: graphql
+  query: |
+    query GetUser($id: ID!) {
+      user(id: $id) { id name email }
+    }
+  variables:
+    id: "${user_id}"
+  operation_name: GetUser
+```
+
+When using `type: graphql`, HttpProbe automatically sets the method to POST and the Content-Type to `application/json`. See the [GraphQL Testing](graphql) page for full details.
 
 ### Assertions
 
@@ -264,9 +280,15 @@ assertions:
         "email": { "type": "string", "format": "email" }
       }
     }
+
+  # GraphQL assertions (for GraphQL APIs)
+  graphql:
+    no_errors: true
+    data:
+      "$.user.id": "123"
 ```
 
-See the [Assertions](assertions) page for detailed information on all available assertion types.
+See the [Assertions](assertions) page for detailed information on all available assertion types, and the [GraphQL Testing](graphql) page for GraphQL-specific assertions.
 
 ## Complete Example
 

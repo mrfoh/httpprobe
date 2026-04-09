@@ -35,12 +35,13 @@ assertions:
 
 ## Types of Assertions
 
-HttpProbe supports four main types of assertions:
+HttpProbe supports five main types of assertions:
 
 1. Status code assertions
 2. Header assertions
 3. Body assertions
 4. Schema assertions
+5. GraphQL assertions
 
 ### Status Code Assertions
 
@@ -169,6 +170,36 @@ JSON Schema allows you to validate:
 - Numeric ranges
 - Array contents
 - And much more
+
+### GraphQL Assertions
+
+GraphQL assertions are designed for APIs that return HTTP 200 for both success and error responses. They validate the structure of GraphQL responses, which contain `data` and `errors` fields.
+
+```yaml
+assertions:
+  status: 200
+  graphql:
+    no_errors: true
+    data:
+      "$.user.id": "123"
+      "$.user.email": "/.+@.+/"
+    data_schema: |
+      { "type": "object", "required": ["user"] }
+```
+
+Available GraphQL assertion options:
+
+| Option | Description |
+| ------ | ----------- |
+| `no_errors` | `true` to assert no errors, `false` to assert errors are present |
+| `data` | JSONPath assertions relative to `response.data` |
+| `errors` | List of expected errors matched by `message` and `extensions.*` |
+| `partial_data` | `false` to fail if both `data` and `errors` coexist |
+| `data_schema` | JSON Schema to validate `response.data` against |
+
+Data paths use JSONPath expressions relative to `response.data`, so `$.user.id` refers to `response.data.user.id`. Regex patterns are supported by wrapping the expected value in forward slashes (`/pattern/`).
+
+For full details, see the [GraphQL Testing](graphql#graphql-assertions) page.
 
 ## Handling Assertion Failures
 

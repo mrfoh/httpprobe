@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/alitto/pond/v2"
+	gql "github.com/mrfoh/httpprobe/internal/graphql"
 	"github.com/mrfoh/httpprobe/internal/logging"
 	"github.com/mrfoh/httpprobe/internal/tests"
 	"github.com/mrfoh/httpprobe/pkg/easyreq"
@@ -250,6 +251,33 @@ func (r *Runner) executeTestDefinition(def *tests.TestDefinition) (tests.TestDef
 	r.Logger.Debug(fmt.Sprintf("executing test definition: %s", def.Name))
 	r.Logger.Debug("test definition variables", zap.Any("variables", def.Variables))
 
+	// Pre-flight GraphQL query validation
+	if def.GraphQL != nil && def.GraphQL.Validation.Enabled {
+		validationErrors, err := r.validateGraphQLQueries(def)
+		if err != nil {
+			r.Logger.Error("Error during GraphQL pre-flight validation", zap.Error(err))
+			if def.GraphQL.Validation.OnError != "warn" {
+				return result, fmt.Errorf("GraphQL pre-flight validation error: %w", err)
+			}
+		}
+
+		if len(validationErrors) > 0 {
+			r.Logger.Info(fmt.Sprintf("PRE-FLIGHT VALIDATION — %d error(s) found", len(validationErrors)))
+			for _, ve := range validationErrors {
+				r.Logger.Error("GraphQL validation error",
+					zap.String("suite", ve.SuiteName),
+					zap.String("case", ve.CaseTitle),
+					zap.Int("line", ve.Line),
+					zap.Int("column", ve.Column),
+					zap.String("message", ve.Message))
+			}
+
+			if def.GraphQL.Validation.OnError != "warn" {
+				return result, fmt.Errorf("GraphQL pre-flight validation failed with %d error(s). Fix the queries above and re-run", len(validationErrors))
+			}
+		}
+	}
+
 	// Execute BeforeAll hooks if they exist
 	if len(def.BeforeAll) > 0 {
 		r.Logger.Debug("Executing BeforeAll hooks", zap.Strings("hooks", def.BeforeAll))
@@ -350,4 +378,37 @@ func (r *Runner) executeTestDefinition(def *tests.TestDefinition) (tests.TestDef
 	}
 
 	return result, nil
+}
+
+// validateGraphQLQueries validates all GraphQL queries in a test definition against the configured schema
+func (r *Runner) validateGraphQLQueries(def *tests.TestDefinition) ([]gql.ValidationError, error) {
+	loader, err := gql.NewSchemaLoader(def.GraphQL.Schema.Source, def.GraphQL.Schema.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	schema, err := loader.Load()
+	if err != nil {
+		return nil, err
+	}
+
+	validator := gql.NewValidator(schema)
+	var allErrors []gql.ValidationError
+
+	for _, suite := range def.Suites {
+		for _, testCase := range suite.Cases {
+			if testCase.Request.Body.Type != "graphql" || testCase.Request.Body.Query == "" {
+				continue
+			}
+
+			errors := validator.ValidateQuery(testCase.Request.Body.Query)
+			for i := range errors {
+				errors[i].SuiteName = suite.Name
+				errors[i].CaseTitle = testCase.Title
+			}
+			allErrors = append(allErrors, errors...)
+		}
+	}
+
+	return allErrors, nil
 }

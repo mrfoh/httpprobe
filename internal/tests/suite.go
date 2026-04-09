@@ -136,6 +136,31 @@ func (suite *TestSuite) ExecCase(testcase *TestCase, logger logging.Logger, clie
 		return TestCaseResult{}, fmt.Errorf("error interpolating variables: %w", err)
 	}
 
+	// Handle GraphQL body type: build envelope, auto-set method and Content-Type
+	if request.Body.Type == "graphql" {
+		envelope := BuildGraphQLBody(&request.Body)
+		request.Body.Type = "json"
+		request.Body.Data = envelope
+
+		if request.Method == "" {
+			request.Method = "POST"
+		}
+
+		hasContentType := false
+		for _, h := range request.Headers {
+			if strings.EqualFold(h.Key, "content-type") {
+				hasContentType = true
+				break
+			}
+		}
+		if !hasContentType {
+			request.Headers = append(request.Headers, RequestHeader{
+				Key:   "Content-Type",
+				Value: "application/json",
+			})
+		}
+	}
+
 	// Convert request headers to map format
 	headers := make(map[string]interface{})
 	for _, h := range request.Headers {
@@ -199,6 +224,13 @@ func (suite *TestSuite) ExecCase(testcase *TestCase, logger logging.Logger, clie
 		if err := processBodyExports(&request, resp, suite, logger); err != nil {
 			logger.Warn("Error processing response body exports", zap.Error(err))
 			// We continue execution even if export fails
+		}
+	}
+
+	// Process GraphQL exports (paths relative to response.data)
+	if len(request.Export.GraphQL) > 0 && resp != nil && resp.Body != nil {
+		if err := processGraphQLExports(&request, resp, suite, logger); err != nil {
+			logger.Warn("Error processing GraphQL exports", zap.Error(err))
 		}
 	}
 
