@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Failure Reporting
-nav_order: 6
+nav_order: 7
 description: "Understanding and troubleshooting test failures in HttpProbe."
 ---
 

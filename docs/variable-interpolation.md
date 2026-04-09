@@ -261,6 +261,21 @@ suites:
 
 In this example, the login response contains a token that is exported as `access_token` and used in the subsequent request to get the user profile.
 
+### GraphQL Export Shorthand
+
+For GraphQL APIs, HttpProbe provides an `export.graphql` shorthand where JSONPaths are relative to `response.data` instead of the full response body:
+
+```yaml
+export:
+  graphql:
+    - path: "$.login.token"
+      as: "auth_token"
+    - path: "$.login.user.id"
+      as: "user_id"
+```
+
+This is equivalent to using `export.body` with `$.data.login.token`, but is more readable. Both `body` and `graphql` exports can be used in the same test case. See the [GraphQL Testing](graphql#graphql-exports) page for more details.
+
 ## Variable Usage Examples
 
 Variables can be used in various parts of your test definition:

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Command Line Usage
-nav_order: 5
+nav_order: 6
 description: Learn how to use the HttpProbe command line interface
 ---
 

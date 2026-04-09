@@ -24,6 +24,7 @@ HttpProbe makes API testing simple and powerful by allowing you to define tests 
 - **Variable interpolation** for dynamic test data
 - **Comprehensive assertions** for status codes, headers, and response bodies
 - **Schema validation** for verifying response structures
+- **First-class GraphQL support** with dedicated body type, assertions, and pre-flight query validation
 - **Multiple output formats** for results visualization
 - **Parallel execution** for faster test runs
 
@@ -157,4 +158,5 @@ Explore the detailed documentation:
 - [Test Definitions](test-definitions) - Learn the structure of test definition files
 - [Variable Interpolation](variable-interpolation) - Dynamic values in your tests
 - [Assertions](assertions) - Validating API responses
+- [GraphQL Testing](graphql) - Testing GraphQL APIs with dedicated assertions and query validation
 - [Command Line Usage](cli-usage) - Command line options and arguments
