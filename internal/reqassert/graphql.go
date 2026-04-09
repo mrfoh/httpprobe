@@ -74,8 +74,10 @@ func (a *GraphQLNoErrorsAssertion) Validate(ctx *AssertionContext) error {
 
 // GraphQLDataAssertion validates a JSONPath within response.data
 type GraphQLDataAssertion struct {
-	JSONPath      string
-	ExpectedValue interface{}
+	JSONPath       string
+	ExpectedValue  interface{}
+	ComparisonType string // equals, contains, gt, lt, etc.
+	IsLengthCheck  bool   // true when asserting on the length of the value
 }
 
 func (a *GraphQLDataAssertion) Validate(ctx *AssertionContext) error {
@@ -102,6 +104,29 @@ func (a *GraphQLDataAssertion) Validate(ctx *AssertionContext) error {
 		return fmt.Errorf("graphql data: error extracting '%s': %v", a.JSONPath, err)
 	}
 
+	// Handle length checks (e.g., "length > 0")
+	if a.IsLengthCheck {
+		var length int
+		switch v := actualValue.(type) {
+		case string:
+			length = len(v)
+		case []interface{}:
+			length = len(v)
+		case map[string]interface{}:
+			length = len(v)
+		default:
+			return fmt.Errorf("graphql data: '%s' cannot check length of %T", a.JSONPath, actualValue)
+		}
+		bodyAssertion := &BodyAssertion{
+			JSONPath:       a.JSONPath,
+			ComparisonType: a.ComparisonType,
+		}
+		if err := bodyAssertion.compareValues(float64(length), a.ExpectedValue); err != nil {
+			return fmt.Errorf("graphql data: '%s' length %d: %v", a.JSONPath, length, err)
+		}
+		return nil
+	}
+
 	// Check if expected value is a regex pattern (e.g., "/.+@.+/")
 	if expectedStr, ok := a.ExpectedValue.(string); ok {
 		if strings.HasPrefix(expectedStr, "/") && strings.HasSuffix(expectedStr, "/") && len(expectedStr) > 2 {
@@ -118,8 +143,14 @@ func (a *GraphQLDataAssertion) Validate(ctx *AssertionContext) error {
 		}
 	}
 
-	if actualValue != a.ExpectedValue {
-		return fmt.Errorf("graphql data: '%s' expected '%v', got '%v'", a.JSONPath, a.ExpectedValue, actualValue)
+	// Delegate to BodyAssertion for comparison operator support
+	bodyAssertion := &BodyAssertion{
+		JSONPath:       a.JSONPath,
+		ExpectedValue:  a.ExpectedValue,
+		ComparisonType: a.ComparisonType,
+	}
+	if err := bodyAssertion.compareValues(actualValue, a.ExpectedValue); err != nil {
+		return fmt.Errorf("graphql data: '%s' %v", a.JSONPath, err)
 	}
 	return nil
 }
@@ -277,9 +308,32 @@ func (f *GraphQLAssertionFactory) Create(key string, expected interface{}) (Asse
 	// data — JSONPath assertions relative to response.data
 	if data, ok := graphqlMap["data"].(map[string]interface{}); ok {
 		for jsonPath, expectedValue := range data {
+			comparisonType := ""
+			isLengthCheck := false
+			if expectedStr, ok := expectedValue.(string); ok {
+				// Check for "length" patterns first (e.g., "length > 0", "length 10")
+				lengthRe := regexp.MustCompile(`^\s*length\s*(=|==|!=|>|>=|<|<=)?\s*(\d+)\s*$`)
+				if matches := lengthRe.FindStringSubmatch(expectedStr); len(matches) > 0 {
+					isLengthCheck = true
+					comparisonType = matches[1]
+					if comparisonType == "" {
+						comparisonType = "="
+					}
+					expectedValue = matches[2]
+				} else {
+					// Parse comparison operators (same as BodyAssertionFactory)
+					re := regexp.MustCompile(`^\s*(=|==|!=|>|>=|<|<=|contains)\s*(.+)$`)
+					if matches := re.FindStringSubmatch(expectedStr); len(matches) > 0 {
+						comparisonType = matches[1]
+						expectedValue = matches[2]
+					}
+				}
+			}
 			group.Assertions = append(group.Assertions, &GraphQLDataAssertion{
-				JSONPath:      jsonPath,
-				ExpectedValue: expectedValue,
+				JSONPath:       jsonPath,
+				ExpectedValue:  expectedValue,
+				ComparisonType: comparisonType,
+				IsLengthCheck:  isLengthCheck,
 			})
 		}
 	}
