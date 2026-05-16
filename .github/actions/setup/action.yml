@@ -91,15 +91,20 @@ runs:
         set -euo pipefail
         asset="httpprobe-v${VERSION_NO_V}_${OS}_${ARCH}.tar.gz"
         url="https://github.com/mrfoh/httpprobe/releases/download/${TAG}/${asset}"
-        install_dir="${RUNNER_TEMP}/httpprobe-${VERSION_NO_V}"
+        # On Windows runners, $RUNNER_TEMP is a Windows path (e.g. D:\a\_temp) that
+        # confuses tar and other POSIX tools. cygpath -u normalizes it to /d/a/_temp.
+        if command -v cygpath >/dev/null 2>&1; then
+          install_dir="$(cygpath -u "$RUNNER_TEMP")/httpprobe-${VERSION_NO_V}"
+        else
+          install_dir="${RUNNER_TEMP}/httpprobe-${VERSION_NO_V}"
+        fi
         mkdir -p "$install_dir"
         echo "Downloading $url"
         if ! curl -fsSL "$url" -o "${install_dir}/${asset}"; then
           echo "::error::Failed to download $url"
           exit 1
         fi
-        # --force-local: stop GNU tar treating Windows "D:" drive prefix as a remote host
-        tar --force-local -xzf "${install_dir}/${asset}" -C "$install_dir"
+        tar -xzf "${install_dir}/${asset}" -C "$install_dir"
         rm -f "${install_dir}/${asset}"
         bin_path="${install_dir}/${BINARY}"
         if [ ! -f "$bin_path" ]; then
@@ -113,7 +118,13 @@ runs:
 
     - name: Add to PATH
       shell: bash
-      run: echo "${{ steps.download.outputs.install_dir }}" >> "$GITHUB_PATH"
+      run: |
+        # Convert back to Windows form so $GITHUB_PATH appends correctly on win runners.
+        dir="${{ steps.download.outputs.install_dir }}"
+        if command -v cygpath >/dev/null 2>&1; then
+          dir="$(cygpath -w "$dir")"
+        fi
+        echo "$dir" >> "$GITHUB_PATH"
 
     - name: Verify
       shell: bash
