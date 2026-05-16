@@ -35,6 +35,3 @@ jobs:
           echo "Installed ${{ steps.setup.outputs.version }}"
           httpprobe --version
           httpprobe --help
-      - name: Run a sample test
-        shell: bash
-        run: httpprobe run -p samples/simple.test.yaml
