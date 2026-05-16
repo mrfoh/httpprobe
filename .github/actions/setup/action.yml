@@ -98,7 +98,8 @@ runs:
           echo "::error::Failed to download $url"
           exit 1
         fi
-        tar -xzf "${install_dir}/${asset}" -C "$install_dir"
+        # --force-local: stop GNU tar treating Windows "D:" drive prefix as a remote host
+        tar --force-local -xzf "${install_dir}/${asset}" -C "$install_dir"
         rm -f "${install_dir}/${asset}"
         bin_path="${install_dir}/${BINARY}"
         if [ ! -f "$bin_path" ]; then
