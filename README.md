@@ -69,6 +69,19 @@ go build -o httpprobe ./cmd/main.go
 go install github.com/mrfoh/httpprobe@latest
 ```
 
+### GitHub Actions
+
+Install httpprobe in a workflow and run your tests:
+
+```yaml
+- uses: mrfoh/httpprobe/.github/actions/setup@v1.2.0
+  with:
+    version: latest   # or pin to a specific tag like v1.2.0
+- run: httpprobe run -p ./tests
+```
+
+See the [GitHub Action docs](https://mrfoh.github.io/httpprobe/github-action.html) for inputs, outputs, and matrix examples.
+
 ## Quick Start
 
 1. Create a test definition file (`test.yaml`):
