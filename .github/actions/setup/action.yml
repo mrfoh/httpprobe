@@ -1,0 +1,119 @@
+name: Setup httpprobe
+description: Install the httpprobe CLI on a GitHub Actions runner and add it to PATH.
+author: mrfoh
+
+branding:
+  icon: zap
+  color: purple
+
+inputs:
+  version:
+    description: 'Version to install (e.g. v1.2.0, 1.2.0, or latest).'
+    required: false
+    default: 'latest'
+  github-token:
+    description: 'Token used to query the GitHub releases API (avoids anonymous rate limits).'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  version:
+    description: 'The resolved version that was installed (e.g. v1.2.0).'
+    value: ${{ steps.resolve.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve version
+      id: resolve
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set -euo pipefail
+        if [ "${INPUT_VERSION}" = "latest" ] || [ -z "${INPUT_VERSION}" ]; then
+          tag=$(curl -fsSL \
+                  -H "Authorization: Bearer ${GH_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/mrfoh/httpprobe/releases/latest" \
+                | grep '"tag_name":' \
+                | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$tag" ]; then
+            echo "::error::Could not resolve latest release for mrfoh/httpprobe"
+            exit 1
+          fi
+        else
+          tag="${INPUT_VERSION#v}"
+          tag="v${tag}"
+        fi
+        echo "version=${tag}" >> "$GITHUB_OUTPUT"
+        echo "version_no_v=${tag#v}" >> "$GITHUB_OUTPUT"
+
+    - name: Map platform
+      id: platform
+      shell: bash
+      run: |
+        set -euo pipefail
+        case "$RUNNER_OS" in
+          Linux)   os=linux   ;;
+          macOS)   os=darwin  ;;
+          Windows) os=windows ;;
+          *) echo "::error::Unsupported RUNNER_OS=$RUNNER_OS"; exit 1 ;;
+        esac
+        case "$RUNNER_ARCH" in
+          X64)   arch=amd64 ;;
+          ARM64) arch=arm64 ;;
+          X86)   arch=386   ;;
+          *) echo "::error::Unsupported RUNNER_ARCH=$RUNNER_ARCH"; exit 1 ;;
+        esac
+        if [ "$os" = "darwin" ] && [ "$arch" = "386" ]; then
+          echo "::error::darwin/386 is not built"; exit 1
+        fi
+        echo "os=$os" >> "$GITHUB_OUTPUT"
+        echo "arch=$arch" >> "$GITHUB_OUTPUT"
+        if [ "$os" = "windows" ]; then
+          echo "binary=httpprobe.exe" >> "$GITHUB_OUTPUT"
+        else
+          echo "binary=httpprobe" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Download and extract
+      id: download
+      shell: bash
+      env:
+        TAG: ${{ steps.resolve.outputs.version }}
+        VERSION_NO_V: ${{ steps.resolve.outputs.version_no_v }}
+        OS: ${{ steps.platform.outputs.os }}
+        ARCH: ${{ steps.platform.outputs.arch }}
+        BINARY: ${{ steps.platform.outputs.binary }}
+      run: |
+        set -euo pipefail
+        asset="httpprobe-v${VERSION_NO_V}_${OS}_${ARCH}.tar.gz"
+        url="https://github.com/mrfoh/httpprobe/releases/download/${TAG}/${asset}"
+        install_dir="${RUNNER_TEMP}/httpprobe-${VERSION_NO_V}"
+        mkdir -p "$install_dir"
+        echo "Downloading $url"
+        if ! curl -fsSL "$url" -o "${install_dir}/${asset}"; then
+          echo "::error::Failed to download $url"
+          exit 1
+        fi
+        tar -xzf "${install_dir}/${asset}" -C "$install_dir"
+        rm -f "${install_dir}/${asset}"
+        bin_path="${install_dir}/${BINARY}"
+        if [ ! -f "$bin_path" ]; then
+          bin_path=$(find "$install_dir" -type f -name "${BINARY}" | head -n1)
+        fi
+        if [ -z "$bin_path" ] || [ ! -f "$bin_path" ]; then
+          echo "::error::Binary $BINARY not found in archive"; exit 1
+        fi
+        chmod +x "$bin_path"
+        echo "install_dir=$install_dir" >> "$GITHUB_OUTPUT"
+
+    - name: Add to PATH
+      shell: bash
+      run: echo "${{ steps.download.outputs.install_dir }}" >> "$GITHUB_PATH"
+
+    - name: Verify
+      shell: bash
+      run: httpprobe --version
